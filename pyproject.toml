@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "eradiate-absdb"
 version = "0.1.0"
@@ -10,16 +14,29 @@ dependencies = ["attrs", "cachetools", "netcdf4", "pint", "scipy", "typer", "xar
 [project.scripts]
 eradiate-absdb = "eradiate_absdb.cli:main"
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [dependency-groups]
-dev = ["pytest", "pytest-datadir", "taskipy"]
+dev = [
+  "autodocsumm>=0.2.14",
+  "pytest",
+  "pytest-datadir",
+  "pytest-cov",
+  "shibuya",
+  "sphinx",
+  "sphinx-autobuild>=2021",
+  "sphinx-copybutton>=0.5.2",
+  "taskipy",
+]
 
 
 [tool.pytest.ini_options]
 testpaths = "tests"
+norecursedirs = [".git", ".env", "dist", "__pypackages__"]
+python_files = ["test_*.py", "*_test.py", "tests.py"]
 
 [tool.taskipy.tasks]
+docs = { cmd = "sphinx-build -b html docs docs/_build/html", cwd = "." }
+docs-clean = { cmd = "rm -rf docs/_build/", cwd = "." }
+docs-serve = { cmd = "sphinx-autobuild docs docs/_build/html", cwd = "." }
 test = { cmd = "pytest tests", cwd = "." }
+test-cov = { cmd = "pytest --cov=src", cwd = "." }
+test-cov-report = { cmd = "pytest --cov=src --cov-report=html", cwd = "." }
