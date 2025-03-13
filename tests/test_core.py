@@ -2,6 +2,7 @@
 Tests for the radprops._absorption module.
 """
 
+import xarray as xr
 import pytest
 from eradiate_absdb import (
     CKDAbsorptionDatabase,
@@ -9,6 +10,46 @@ from eradiate_absdb import (
     MonoAbsorptionDatabase,
 )
 from eradiate_absdb.units import ureg
+
+
+@pytest.fixture
+def absorption_database_error_handler_config():
+    """
+    Error handler configuration for absorption coefficient interpolation.
+
+    Notes
+    -----
+    This configuration is chosen to ignore all interpolation issues (except
+    bounds error along the mole fraction dimension) because warnings are
+    captured by pytest which will raise.
+    Ignoring the bounds on pressure and temperature is safe because
+    out-of-bounds values usually correspond to locations in the atmosphere
+    that are so high that the contribution to the absorption coefficient
+    are negligible at these heights.
+    The bounds error for the 'x' (mole fraction) coordinate is considered
+    fatal.
+    """
+    return {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
+    }
+
+
+@pytest.fixture
+def thermoprops_us_standard(shared_datadir):
+    """
+    This dataset is created with the following command:
+
+    .. code:: python
+
+        joseki.make(
+            identifier="afgl_1986-us_standard",
+            z=np.linspace(0.0, 120.0, 121) * ureg.km,
+            additional_molecules=False,
+        )
+    """
+    yield xr.load_dataset(shared_datadir / "afgl_1986-us_standard.nc")
 
 
 @pytest.fixture
@@ -54,7 +95,7 @@ def test_ckd_filename_lookup(absdb_ckd, w, expected):
     assert absdb_ckd.lookup_filenames(**w) == expected
 
 
-@pytest.mark.parametrize("wg", [([550.0] * ureg.nm, 0.5)])
+@pytest.mark.parametrize("wg", [([350.0] * ureg.nm, 0.5)])
 def test_eval(
     absdb_ckd, thermoprops_us_standard, absorption_database_error_handler_config, wg
 ):
