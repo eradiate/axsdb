@@ -5,7 +5,7 @@ description = "An absorption database reader for the Eradiate radiative transfer
 readme = "README.md"
 authors = [{ name = "Vincent Leroy", email = "vincent.leroy@rayference.eu" }]
 requires-python = ">=3.9"
-dependencies = ["attrs", "cachetools", "xarray", "pint", "typer", "netcdf4"]
+dependencies = ["attrs", "cachetools", "netcdf4", "pint", "typer", "xarray"]
 
 [project.scripts]
 eradiate-absdb = "eradiate_absdb.cli:main"
@@ -15,7 +15,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [dependency-groups]
-dev = ["pytest", "taskipy", "pytest-datadir"]
+dev = ["pytest", "pytest-datadir", "taskipy"]
 
 
 [tool.pytest.ini_options]
