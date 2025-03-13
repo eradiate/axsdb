@@ -36,12 +36,12 @@ intersphinx_mapping = {
 
 
 html_static_path = ["_static"]
-html_title = "xarray-validate"
+html_title = "eradiate-absdb"
 
 # Use Shibuya theme
 # https://shibuya.lepture.com/
 html_theme = "shibuya"
-# html_theme_options = {
-#     "navigation_with_keys": True,
-#     "sidebar_hide_name": True,
-# }
+html_theme_options = {
+    "accent_color": "indigo",
+    "navigation_with_keys": True,
+}

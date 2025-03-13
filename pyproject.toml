@@ -27,7 +27,6 @@ dev = [
   "taskipy",
 ]
 
-
 [tool.pytest.ini_options]
 testpaths = "tests"
 norecursedirs = [".git", ".env", "dist", "__pypackages__"]

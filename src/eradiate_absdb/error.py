@@ -29,19 +29,52 @@ class InterpolationError(Exception):
 
 
 class ErrorHandlingAction(enum.Enum):
-    IGNORE = "ignore"
-    RAISE = "raise"
-    WARN = "warn"
+    """
+    Error handling action descriptors.
+    """
+
+    IGNORE = "ignore"  #: Ignore the error.
+    RAISE = "raise"  #: Raise the error.
+    WARN = "warn"  #: Emit a warning.
 
 
 @attrs.define
 class ErrorHandlingPolicy:
+    """
+    Error handling policy.
+
+    Parameters
+    ----------
+    missing : ErrorHandlingAction
+        Action to perform when a variable is missing.
+
+    scalar : ErrorHandlingAction
+        Action to perform when a dimension is scalar.
+
+    bounds : ErrorHandlingAction
+        Action to perform when an off-bounds query is made.
+    """
+
     missing: ErrorHandlingAction
     scalar: ErrorHandlingAction
     bounds: ErrorHandlingAction
 
     @classmethod
     def convert(cls, value):
+        """
+        Convert a value to an :class:`.ErrorHandlingPolicy`.
+
+        Parameters
+        ----------
+        value
+            Value to convert. Dictionaries values are tentatively converted to
+            :class:`.ErrorHandlingAction`, then passed as keyword arguments to
+            the constructor.
+
+        Returns
+        -------
+        ErrorHandlingPolicy
+        """
         if isinstance(value, Mapping):
             kwargs = {k: ErrorHandlingAction(v) for k, v in value.items()}
             return cls(**kwargs)
@@ -51,12 +84,40 @@ class ErrorHandlingPolicy:
 
 @attrs.define
 class ErrorHandlingConfiguration:
+    """
+    Error handling configuration.
+
+    Parameters
+    ----------
+    x : .ErrorHandlingPolicy
+        Error handling policy for species concentrations.
+
+    p : .ErrorHandlingPolicy
+        Error handling policy for pressure.
+
+    t : .ErrorHandlingPolicy
+        Error handling policy for temperature.
+    """
+
     x: ErrorHandlingPolicy = attrs.field(converter=ErrorHandlingPolicy.convert)
     p: ErrorHandlingPolicy = attrs.field(converter=ErrorHandlingPolicy.convert)
     t: ErrorHandlingPolicy = attrs.field(converter=ErrorHandlingPolicy.convert)
 
     @classmethod
     def convert(cls, value):
+        """
+        Convert a value to an :class:`.ErrorHandlingConfiguration`.
+
+        Parameters
+        ----------
+        value
+            Value to convert. Dictionaries values are passed as keyword arguments
+            to the constructor.
+
+        Returns
+        -------
+        ErrorHandlingConfiguration
+        """
         if isinstance(value, Mapping):
             return cls(**value)
         else:
@@ -64,6 +125,18 @@ class ErrorHandlingConfiguration:
 
 
 def handle_error(error: InterpolationError, action: ErrorHandlingAction):
+    """
+    Apply an error handling policy.
+
+    Parameters
+    ----------
+    error : .InterpolationError
+        The error that is handled.
+
+    action : ErrorHandlingAction
+        If ``IGNORE``, do nothing; if ``WARN``, emit a warning; if ``RAISE``,
+        raise the error.
+    """
     if action is ErrorHandlingAction.IGNORE:
         return
 
@@ -81,6 +154,19 @@ _ERROR_HANDLING_CONFIG: ErrorHandlingConfiguration | None = None
 
 
 def set_error_handling_config(value: Mapping | ErrorHandlingConfiguration) -> None:
+    """
+    Set the error handling configuration.
+
+    Parameters
+    ----------
+    value : Mapping | ErrorHandlingConfiguration
+        Error handling configuration.
+
+    Raises
+    ------
+    ValueError
+        If ``value`` cannot be converted to an :class:`.ErrorHandlingConfiguration`.
+    """
     global _ERROR_HANDLING_CONFIG
     value = ErrorHandlingConfiguration.convert(value)
     if not isinstance(value, ErrorHandlingConfiguration):
@@ -89,6 +175,13 @@ def set_error_handling_config(value: Mapping | ErrorHandlingConfiguration) -> No
 
 
 def get_error_handling_config() -> ErrorHandlingConfiguration:
+    """
+    Retrieve the current error handling configuration.
+
+    Returns
+    -------
+    ErrorHandlingConfiguration
+    """
     if _ERROR_HANDLING_CONFIG is None:  # No config yet: assign a default
         set_error_handling_config(
             {
