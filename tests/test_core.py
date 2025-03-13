@@ -2,6 +2,7 @@
 Tests for the radprops._absorption module.
 """
 
+import numpy as np
 import xarray as xr
 import pytest
 from eradiate_absdb import (
@@ -53,6 +54,15 @@ def thermoprops_us_standard(shared_datadir):
 
 
 @pytest.fixture
+def absdb_mono(shared_datadir):
+    _db = MonoAbsorptionDatabase.from_directory(
+        shared_datadir / "nanomono_v1", lazy=True, fix=False
+    )
+    yield _db
+    _db.cache_clear()
+
+
+@pytest.fixture
 def absdb_ckd(shared_datadir):
     _db = CKDAbsorptionDatabase.from_directory(
         shared_datadir / "nanockd_v1", lazy=False, fix=False
@@ -61,12 +71,48 @@ def absdb_ckd(shared_datadir):
     _db.cache_clear()
 
 
+def test_mono_construct(shared_datadir, absdb_mono):
+    # Default gecko settings use lazy data loading
+    assert absdb_mono.lazy is True
+
+    # The dict converter accepts kwargs and can be used to override defaults
+    absdb_mono = MonoAbsorptionDatabase.from_dict(
+        {
+            "construct": "from_directory",
+            "dir_path": shared_datadir / "nanockd_v1",
+            "lazy": False,
+        }
+    )
+    assert absdb_mono.lazy is False
+
+
+@pytest.mark.parametrize(
+    "w",
+    [
+        np.array([350.0]) * ureg.nm,
+        np.linspace(349.0, 351.0) * ureg.nm,
+    ],
+)
+def test_mono_eval(
+    absdb_mono, thermoprops_us_standard, absorption_database_error_handler_config, w
+):
+    sigma_a = absdb_mono.eval_sigma_a_mono(
+        w,
+        thermoprops_us_standard,
+        ErrorHandlingConfiguration.convert(absorption_database_error_handler_config),
+    )
+
+    # sigma_a should have a shape of (w, z)
+    z = thermoprops_us_standard.z.values
+    assert sigma_a.values.shape == (w.size, z.size)
+
+
 def test_ckd_construct(shared_datadir, absdb_ckd):
     # Default monotropa settings use eager data loading
     assert absdb_ckd.lazy is False
 
     # Additionally, test the dict converter
-    db = MonoAbsorptionDatabase.from_dict(
+    db = CKDAbsorptionDatabase.from_dict(
         {
             "construct": "from_directory",
             "dir_path": shared_datadir / "nanockd_v1",
@@ -96,7 +142,7 @@ def test_ckd_filename_lookup(absdb_ckd, w, expected):
 
 
 @pytest.mark.parametrize("wg", [([350.0] * ureg.nm, 0.5)])
-def test_eval(
+def test_ckd_eval(
     absdb_ckd, thermoprops_us_standard, absorption_database_error_handler_config, wg
 ):
     sigma_a = absdb_ckd.eval_sigma_a_ckd(
