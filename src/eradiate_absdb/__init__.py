@@ -5,6 +5,7 @@ from .core import (
     MonoAbsorptionDatabase,
 )
 from .error import get_error_handling_config, set_error_handling_config
+from ._version import version as __version__
 
 __all__ = [
     "AbsorptionDatabase",
@@ -13,4 +14,5 @@ __all__ = [
     "MonoAbsorptionDatabase",
     "get_error_handling_config",
     "set_error_handling_config",
+    "__version__",
 ]

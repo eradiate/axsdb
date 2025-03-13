@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build-wheels:
+    name: Build wheels
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get current git tag
+        id: tag
+        run: |
+          TAG=$(git describe --tags --abbrev=0)
+          # Remove the leading 'v' from the tag (e.g., 'v1.2.3' -> '1.2.3')
+          GIT_VERSION=${TAG#v}
+          echo "Current git tag version: $GIT_VERSION"
+          echo "::set-output name=tag::$GIT_VERSION"
+
+      - name: Check if git tag matches version
+        run: |
+          # Extract version from pyproject.toml
+          PY_VERSION=$(grep '^version = "' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+          echo "Version from pyproject.toml: $PY_VERSION"
+          if [ "$PY_VERSION" != "${{ steps.tag.outputs.tag }}" ]; then
+            echo "Git tag does not match version in pyproject.toml."
+            exit 1
+          else
+            echo "Git tag matches version in pyproject.toml."
+          fi
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Build wheels
+        run: |
+          uv build
+
+      - name: Test build
+        run: |
+          python3 -m venv fresh_env
+          . fresh_env/bin/activate
+          pip install dist/*.whl
+          fresh_env/bin/python -c "import eradiate_absdb; print(eradiate_absdb.__version__)"
+
+      - name: Store distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  publish-to-testpypi:
+    name: Publish Python distribution to TestPyPI
+    needs:
+      - build-wheels
+    runs-on: ubuntu-latest
+
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/xarray-validate
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distribution to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
