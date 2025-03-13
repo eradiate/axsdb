@@ -57,10 +57,9 @@ def check(
     """
     from eradiate_absdb.core import get_absdb_type
 
-
     try:
         cls = get_absdb_type(mode)
-    except ValueError as e:
+    except ValueError:
         logger.critical(f"Unsupported mode '{mode}'")
         exit(1)
 

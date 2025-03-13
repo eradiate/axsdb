@@ -880,7 +880,6 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
         return result.transpose("w", "z")
 
 
-
 def get_absdb_type(mode: Literal["mono", "ckd"]) -> type:
     """
     Get the :class:`.AbsorptionDatabase` subtype that corresponds to the mode

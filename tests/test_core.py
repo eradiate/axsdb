@@ -2,9 +2,7 @@
 Tests for the radprops._absorption module.
 """
 
-import numpy as np
 import pytest
-from rich.pretty import pprint
 from eradiate_absdb import (
     CKDAbsorptionDatabase,
     ErrorHandlingConfiguration,
