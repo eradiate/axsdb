@@ -27,6 +27,26 @@ dev = [
   "taskipy",
 ]
 
+[tool.coverage.html]
+directory = "./reports/coverage/html"
+
+[tool.coverage.json]
+output = "./reports/coverage/coverage.json"
+
+[tool.coverage.paths]
+equivalent = ["src/", "__pypackages__/"]
+
+[tool.coverage.report]
+omit = ["src/*/__init__.py", "src/*/_version.py"]
+precision = 2
+show_missing = true
+skip_covered = true
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source = ["src/"]
+
 [tool.pytest.ini_options]
 testpaths = "tests"
 norecursedirs = [".git", ".env", "dist", "__pypackages__"]
