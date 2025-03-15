@@ -24,3 +24,8 @@ repos:
     rev: v0.9.3
     hooks:
       - id: taplo-format
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.6.6  # uv version
+    hooks:
+      - id: uv-export
+        args: [ "--frozen", "--output-file=docs/requirements.txt" ]
