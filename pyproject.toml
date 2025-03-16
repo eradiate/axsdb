@@ -15,17 +15,15 @@ dependencies = ["attrs", "cachetools", "netcdf4", "pint", "scipy", "typer", "xar
 eradiate-absdb = "eradiate_absdb.cli:main"
 
 [dependency-groups]
-dev = [
+test = ["pytest", "pytest-datadir", "pytest-cov"]
+docs = [
   "autodocsumm>=0.2.14",
-  "pytest",
-  "pytest-datadir",
-  "pytest-cov",
   "shibuya",
   "sphinx",
   "sphinx-autobuild>=2021",
   "sphinx-copybutton>=0.5.2",
-  "taskipy",
 ]
+dev = ["taskipy", { include-group = "test" }, { include-group = "docs" }]
 
 [tool.coverage.html]
 directory = "./reports/coverage/html"
