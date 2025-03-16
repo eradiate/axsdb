@@ -24,6 +24,8 @@ docs = [
   "sphinx-copybutton>=0.5.2",
 ]
 dev = ["taskipy", { include-group = "test" }, { include-group = "docs" }]
+pycharm = ["setuptools", { include-group = "dev" }]
+interactive = ["jupyterlab", "matplotlib"]
 
 [tool.coverage.html]
 directory = "./reports/coverage/html"
