@@ -1,7 +1,3 @@
-"""
-Tests for the radprops._absorption module.
-"""
-
 import numpy as np
 import xarray as xr
 import pytest
@@ -89,9 +85,10 @@ def test_mono_construct(shared_datadir, absdb_mono):
 @pytest.mark.parametrize(
     "w",
     [
-        np.array([350.0]) * ureg.nm,
-        np.linspace(349.0, 351.0) * ureg.nm,
+        [350.0] * ureg.nm,
+        np.linspace(349.0, 351.0, 3) * ureg.nm,
     ],
+    ids=["scalar", "vector"],
 )
 def test_mono_eval(
     absdb_mono, thermoprops_us_standard, absorption_database_error_handler_config, w
@@ -147,8 +144,10 @@ def test_ckd_eval(
 ):
     sigma_a = absdb_ckd.eval_sigma_a_ckd(
         *wg,
-        thermoprops_us_standard,
-        ErrorHandlingConfiguration.convert(absorption_database_error_handler_config),
+        thermoprops=thermoprops_us_standard,
+        error_handling_config=ErrorHandlingConfiguration.convert(
+            absorption_database_error_handler_config
+        ),
     )
 
     # sigma_a should have a shape of (w, z)

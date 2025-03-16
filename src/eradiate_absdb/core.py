@@ -644,7 +644,7 @@ class AbsorptionDatabase:
         bounds_error = error_handling_config.t.bounds is ErrorHandlingAction.RAISE
         fill_value = None if bounds_error else 0.0  # TODO: use 2-element tuple?
         result = da.interp(
-            t=thermoprops.t,
+            t=thermoprops["t"],
             kwargs={"bounds_error": bounds_error, "fill_value": fill_value},
         )
 
@@ -652,7 +652,7 @@ class AbsorptionDatabase:
         bounds_error = error_handling_config.p.bounds is ErrorHandlingAction.RAISE
         fill_value = None if bounds_error else 0.0  # TODO: use 2-element tuple?
         result = result.interp(
-            p=thermoprops.p,
+            p=thermoprops["p"],
             kwargs={"bounds_error": bounds_error, "fill_value": fill_value},
         )
 
