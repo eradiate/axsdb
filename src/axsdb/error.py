@@ -150,7 +150,7 @@ def handle_error(error: InterpolationError, action: ErrorHandlingAction):
     raise NotImplementedError
 
 
-_ERROR_HANDLING_CONFIG: ErrorHandlingConfiguration | None = None
+_DEFAULT_ERROR_HANDLING_CONFIG: ErrorHandlingConfiguration | None = None
 
 
 def set_error_handling_config(value: Mapping | ErrorHandlingConfiguration) -> None:
@@ -167,11 +167,11 @@ def set_error_handling_config(value: Mapping | ErrorHandlingConfiguration) -> No
     ValueError
         If ``value`` cannot be converted to an :class:`.ErrorHandlingConfiguration`.
     """
-    global _ERROR_HANDLING_CONFIG
+    global _DEFAULT_ERROR_HANDLING_CONFIG
     value = ErrorHandlingConfiguration.convert(value)
     if not isinstance(value, ErrorHandlingConfiguration):
         raise ValueError("could not convert value to ErrorHandlingConfiguration")
-    _ERROR_HANDLING_CONFIG = value
+    _DEFAULT_ERROR_HANDLING_CONFIG = value
 
 
 def get_error_handling_config() -> ErrorHandlingConfiguration:
@@ -182,7 +182,8 @@ def get_error_handling_config() -> ErrorHandlingConfiguration:
     -------
     ErrorHandlingConfiguration
     """
-    if _ERROR_HANDLING_CONFIG is None:  # No config yet: assign a default
+    global _DEFAULT_ERROR_HANDLING_CONFIG
+    if _DEFAULT_ERROR_HANDLING_CONFIG is None:  # No config yet: assign a default
         set_error_handling_config(
             {
                 # This default configuration ignores bound errors on pressure and temperature
@@ -195,4 +196,4 @@ def get_error_handling_config() -> ErrorHandlingConfiguration:
             }
         )
 
-    return _ERROR_HANDLING_CONFIG
+    return _DEFAULT_ERROR_HANDLING_CONFIG
