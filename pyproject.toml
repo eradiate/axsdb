@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "axsdb"
-version = "0.0.1"
+version = "0.0.2"
 description = "An absorption database reader for the Eradiate radiative transfer model."
 readme = "README.md"
 authors = [{ name = "Vincent Leroy", email = "vincent.leroy@rayference.eu" }]
