@@ -139,20 +139,28 @@ sphinx==7.4.7 ; python_full_version < '3.10'
     #   shibuya
     #   sphinx-autobuild
     #   sphinx-copybutton
+    #   sphinx-design
+    #   sphinx-iconify
 sphinx==8.1.3 ; python_full_version == '3.10.*'
     # via
     #   autodocsumm
     #   shibuya
     #   sphinx-autobuild
     #   sphinx-copybutton
+    #   sphinx-design
+    #   sphinx-iconify
 sphinx==8.2.3 ; python_full_version >= '3.11'
     # via
     #   autodocsumm
     #   shibuya
     #   sphinx-autobuild
     #   sphinx-copybutton
+    #   sphinx-design
+    #   sphinx-iconify
 sphinx-autobuild==2024.10.3
 sphinx-copybutton==0.5.2
+sphinx-design==0.6.1
+sphinx-iconify==0.2.0
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
 sphinxcontrib-devhelp==2.0.0

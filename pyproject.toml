@@ -22,6 +22,8 @@ docs = [
   "sphinx",
   "sphinx-autobuild>=2021",
   "sphinx-copybutton>=0.5.2",
+  "sphinx-design",
+  "sphinx-iconify",
 ]
 dev = ["taskipy", { include-group = "test" }, { include-group = "docs" }]
 pycharm = ["setuptools", { include-group = "dev" }]

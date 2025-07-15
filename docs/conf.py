@@ -21,6 +21,8 @@ extensions = [
     "sphinx.ext.viewcode",
     # Third-party
     "sphinx_copybutton",
+    "sphinx_design",
+    "sphinx_iconify",
     "autodocsumm",
 ]
 
