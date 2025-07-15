@@ -1,4 +1,4 @@
-# Eradiate Absorption Database Reader
+# AxsDB — The Eradiate Absorption Cross-section Database Interface
 
 [![PyPI version](https://img.shields.io/pypi/v/axsdb?color=blue)](https://pypi.org/project/axsdb)
 [![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/eradiate/axsdb/ci.yml?branch=main)](https://github.com/eradiate/axsdb/actions/workflows/ci.yml)
@@ -6,8 +6,8 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-This library provides an interface to read and query Eradiate's absorption
-databases.
+This library provides an interface to read and
+query [Eradiate](https://eradiate.eu)'s absorption databases.
 
 ## License
 
