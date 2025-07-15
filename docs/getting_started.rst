@@ -12,4 +12,4 @@ Install from PyPI in your virtual environment:
 
 .. code:: shell
 
-    python -m pip install eradiate-absdb
+    python -m pip install axsdb

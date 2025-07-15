@@ -8,7 +8,7 @@ from pathlib import Path
 import typer
 from rich.logging import RichHandler
 
-logger = logging.getLogger("eradiate_absdb")
+logger = logging.getLogger("axsdb")
 app = typer.Typer()
 
 
@@ -55,7 +55,7 @@ def check(
     """
     Check data for availability and integrity, optionally fix them.
     """
-    from eradiate_absdb.core import get_absdb_type
+    from axsdb.core import get_absdb_type
 
     try:
         cls = get_absdb_type(mode)

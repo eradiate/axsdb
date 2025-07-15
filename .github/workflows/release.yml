@@ -46,7 +46,7 @@ jobs:
           python3 -m venv fresh_env
           . fresh_env/bin/activate
           pip install dist/*.whl
-          fresh_env/bin/python -c "import eradiate_absdb; print(eradiate_absdb.__version__)"
+          fresh_env/bin/python -c "import axsdb; print(axsdb.__version__)"
 
       - name: Store distribution packages
         uses: actions/upload-artifact@v4
@@ -62,7 +62,7 @@ jobs:
 #
 #    environment:
 #      name: testpypi
-#      url: https://test.pypi.org/p/eradiate-absdb
+#      url: https://test.pypi.org/p/axsdb
 #
 #    permissions:
 #      id-token: write
@@ -87,7 +87,7 @@ jobs:
 
     environment:
       name: pypi
-      url: https://pypi.org/p/eradiate-absdb
+      url: https://pypi.org/p/axsdb
 
     permissions:
       id-token: write

@@ -5,4 +5,4 @@ if sys.version_info >= (3, 8):
 else:
     import importlib_metadata as metadata
 
-version = metadata.version("eradiate_absdb")
+version = metadata.version("axsdb")

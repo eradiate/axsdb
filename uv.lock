@@ -149,6 +149,122 @@ wheels = [
 ]
 
 [[package]]
+name = "axsdb"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "attrs" },
+    { name = "cachetools" },
+    { name = "netcdf4" },
+    { name = "pint" },
+    { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "scipy", version = "1.15.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "typer" },
+    { name = "xarray", version = "2024.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "xarray", version = "2025.1.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "autodocsumm" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-datadir" },
+    { name = "shibuya" },
+    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "sphinx-autobuild" },
+    { name = "sphinx-copybutton" },
+    { name = "taskipy" },
+]
+docs = [
+    { name = "autodocsumm" },
+    { name = "shibuya" },
+    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "sphinx-autobuild" },
+    { name = "sphinx-copybutton" },
+]
+interactive = [
+    { name = "jupyterlab" },
+    { name = "matplotlib", version = "3.9.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "matplotlib", version = "3.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+]
+pycharm = [
+    { name = "autodocsumm" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-datadir" },
+    { name = "setuptools" },
+    { name = "shibuya" },
+    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "sphinx-autobuild" },
+    { name = "sphinx-copybutton" },
+    { name = "taskipy" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-datadir" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "attrs" },
+    { name = "cachetools" },
+    { name = "netcdf4" },
+    { name = "pint" },
+    { name = "scipy" },
+    { name = "typer" },
+    { name = "xarray" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "autodocsumm", specifier = ">=0.2.14" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-datadir" },
+    { name = "shibuya" },
+    { name = "sphinx" },
+    { name = "sphinx-autobuild", specifier = ">=2021" },
+    { name = "sphinx-copybutton", specifier = ">=0.5.2" },
+    { name = "taskipy" },
+]
+docs = [
+    { name = "autodocsumm", specifier = ">=0.2.14" },
+    { name = "shibuya" },
+    { name = "sphinx" },
+    { name = "sphinx-autobuild", specifier = ">=2021" },
+    { name = "sphinx-copybutton", specifier = ">=0.5.2" },
+]
+interactive = [
+    { name = "jupyterlab" },
+    { name = "matplotlib" },
+]
+pycharm = [
+    { name = "autodocsumm", specifier = ">=0.2.14" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-datadir" },
+    { name = "setuptools" },
+    { name = "shibuya" },
+    { name = "sphinx" },
+    { name = "sphinx-autobuild", specifier = ">=2021" },
+    { name = "sphinx-copybutton", specifier = ">=0.5.2" },
+    { name = "taskipy" },
+]
+test = [
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-datadir" },
+]
+
+[[package]]
 name = "babel"
 version = "2.17.0"
 source = { registry = "https://pypi.org/simple" }
@@ -708,122 +824,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ae/ed/aefcc8cd0ba62a0560c3c18c33925362d46c6075480bfa4df87b28e169a9/docutils-0.21.2.tar.gz", hash = "sha256:3a6b18732edf182daa3cd12775bbb338cf5691468f91eeeb109deff6ebfa986f", size = 2204444 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8f/d7/9322c609343d929e75e7e5e6255e614fcc67572cfd083959cdef3b7aad79/docutils-0.21.2-py3-none-any.whl", hash = "sha256:dafca5b9e384f0e419294eb4d2ff9fa826435bf15f15b7bd45723e8ad76811b2", size = 587408 },
-]
-
-[[package]]
-name = "eradiate-absdb"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "attrs" },
-    { name = "cachetools" },
-    { name = "netcdf4" },
-    { name = "pint" },
-    { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "scipy", version = "1.15.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "typer" },
-    { name = "xarray", version = "2024.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "xarray", version = "2025.1.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "autodocsumm" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-    { name = "shibuya" },
-    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "sphinx-autobuild" },
-    { name = "sphinx-copybutton" },
-    { name = "taskipy" },
-]
-docs = [
-    { name = "autodocsumm" },
-    { name = "shibuya" },
-    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "sphinx-autobuild" },
-    { name = "sphinx-copybutton" },
-]
-interactive = [
-    { name = "jupyterlab" },
-    { name = "matplotlib", version = "3.9.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "matplotlib", version = "3.10.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-]
-pycharm = [
-    { name = "autodocsumm" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-    { name = "setuptools" },
-    { name = "shibuya" },
-    { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
-    { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "sphinx-autobuild" },
-    { name = "sphinx-copybutton" },
-    { name = "taskipy" },
-]
-test = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "attrs" },
-    { name = "cachetools" },
-    { name = "netcdf4" },
-    { name = "pint" },
-    { name = "scipy" },
-    { name = "typer" },
-    { name = "xarray" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "autodocsumm", specifier = ">=0.2.14" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-    { name = "shibuya" },
-    { name = "sphinx" },
-    { name = "sphinx-autobuild", specifier = ">=2021" },
-    { name = "sphinx-copybutton", specifier = ">=0.5.2" },
-    { name = "taskipy" },
-]
-docs = [
-    { name = "autodocsumm", specifier = ">=0.2.14" },
-    { name = "shibuya" },
-    { name = "sphinx" },
-    { name = "sphinx-autobuild", specifier = ">=2021" },
-    { name = "sphinx-copybutton", specifier = ">=0.5.2" },
-]
-interactive = [
-    { name = "jupyterlab" },
-    { name = "matplotlib" },
-]
-pycharm = [
-    { name = "autodocsumm", specifier = ">=0.2.14" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
-    { name = "setuptools" },
-    { name = "shibuya" },
-    { name = "sphinx" },
-    { name = "sphinx-autobuild", specifier = ">=2021" },
-    { name = "sphinx-copybutton", specifier = ">=0.5.2" },
-    { name = "taskipy" },
-]
-test = [
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "pytest-datadir" },
 ]
 
 [[package]]

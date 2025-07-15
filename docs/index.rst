@@ -1,9 +1,9 @@
 :hide-toc:
 
-eradiate-absdb documentation
-=============================
+axsdb documentation
+===================
 
-Welcome to the eradiate-absdb documentation!
+Welcome to the axsdb documentation!
 
 .. toctree::
     :maxdepth: 2

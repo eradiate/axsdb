@@ -1,7 +1,7 @@
 API reference
 =============
 
-.. automodule:: eradiate_absdb
+.. automodule:: axsdb
     :autosummary:
     :members:
     :show-inheritance:

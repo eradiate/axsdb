@@ -1,12 +1,12 @@
 import numpy as np
 import xarray as xr
 import pytest
-from eradiate_absdb import (
+from axsdb import (
     CKDAbsorptionDatabase,
     ErrorHandlingConfiguration,
     MonoAbsorptionDatabase,
 )
-from eradiate_absdb.units import ureg
+from axsdb.units import ureg
 
 
 @pytest.fixture

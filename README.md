@@ -1,8 +1,8 @@
 # Eradiate Absorption Database Reader
 
-[![PyPI version](https://img.shields.io/pypi/v/eradiate-absdb?color=blue)](https://pypi.org/project/eradiate-absdb)
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/eradiate/eradiate-absdb/ci.yml?branch=main)](https://github.com/eradiate/eradiate-absdb/actions/workflows/ci.yml)
-[![Documentation Status](https://img.shields.io/readthedocs/eradiate-absdb)](https://eradiate-absdb.readthedocs.io)
+[![PyPI version](https://img.shields.io/pypi/v/axsdb?color=blue)](https://pypi.org/project/axsdb)
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/eradiate/axsdb/ci.yml?branch=main)](https://github.com/eradiate/axsdb/actions/workflows/ci.yml)
+[![Documentation Status](https://img.shields.io/readthedocs/axsdb)](https://axsdb.readthedocs.io)
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 

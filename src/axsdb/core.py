@@ -27,7 +27,7 @@ from .error import (
 from .typing import PathLike
 from .units import ensure_units, ureg, xarray_to_quantity
 
-logger = logging.getLogger("eradiate_absdb")
+logger = logging.getLogger("axsdb")
 
 
 @attrs.define(repr=False, eq=False)
