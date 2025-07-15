@@ -1,6 +1,8 @@
 import numpy as np
 import xarray as xr
 import pytest
+
+import axsdb
 from axsdb import (
     CKDAbsorptionDatabase,
     ErrorHandlingConfiguration,
@@ -49,37 +51,51 @@ def thermoprops_us_standard(shared_datadir):
     yield xr.load_dataset(shared_datadir / "afgl_1986-us_standard.nc")
 
 
+def _absdb(mode, path):
+    if mode == "mono":
+        return MonoAbsorptionDatabase.from_directory(
+            path / "nanomono_v1", lazy=True, fix=False
+        )
+    elif mode == "ckd":
+        return CKDAbsorptionDatabase.from_directory(
+            path / "nanockd_v1", lazy=False, fix=False
+        )
+    else:
+        raise RuntimeError
+
+
+@pytest.fixture
+def absdb(shared_datadir, request):
+    mode = request.param
+    _db = _absdb(mode, shared_datadir)
+    yield _db
+    _db.cache_clear()
+
+
 @pytest.fixture
 def absdb_mono(shared_datadir):
-    _db = MonoAbsorptionDatabase.from_directory(
-        shared_datadir / "nanomono_v1", lazy=True, fix=False
-    )
+    _db = _absdb("mono", shared_datadir)
     yield _db
     _db.cache_clear()
 
 
 @pytest.fixture
 def absdb_ckd(shared_datadir):
-    _db = CKDAbsorptionDatabase.from_directory(
-        shared_datadir / "nanockd_v1", lazy=False, fix=False
-    )
+    _db = _absdb("ckd", shared_datadir)
     yield _db
     _db.cache_clear()
 
 
-def test_mono_construct(shared_datadir, absdb_mono):
-    # Default gecko settings use lazy data loading
-    assert absdb_mono.lazy is True
-
+def test_mono_construct(shared_datadir):
     # The dict converter accepts kwargs and can be used to override defaults
-    absdb_mono = MonoAbsorptionDatabase.from_dict(
+    db = MonoAbsorptionDatabase.from_dict(
         {
             "construct": "from_directory",
             "dir_path": shared_datadir / "nanockd_v1",
             "lazy": False,
         }
     )
-    assert absdb_mono.lazy is False
+    assert db.lazy is False
 
 
 @pytest.mark.parametrize(
@@ -104,10 +120,7 @@ def test_mono_eval(
     assert sigma_a.values.shape == (w.size, z.size)
 
 
-def test_ckd_construct(shared_datadir, absdb_ckd):
-    # Default monotropa settings use eager data loading
-    assert absdb_ckd.lazy is False
-
+def test_ckd_construct(shared_datadir):
     # Additionally, test the dict converter
     db = CKDAbsorptionDatabase.from_dict(
         {
@@ -171,3 +184,41 @@ def test_cache_reset(absdb_ckd):
     absdb_ckd.cache_reset(8)
     assert absdb_ckd._cache.currsize == 0
     assert absdb_ckd._cache.maxsize == 8
+
+
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_error_handling(absdb, thermoprops_us_standard):
+    # The default error handling config is the global one
+    assert absdb.error_handling_config is axsdb.get_error_handling_config()
+
+    # Valid dicts are successfully converted
+    absdb.error_handling_config = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
+    }
+    assert absdb.error_handling_config is not axsdb.get_error_handling_config()
+    assert absdb.error_handling_config == axsdb.get_error_handling_config()
+
+    # Invalid dicts cannot be converted
+    with pytest.raises(ValueError):
+        absdb.error_handling_config = {"wrong": "value"}
+
+    # Check error handling config override
+
+    absdb.error_handling_config = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
+    }
+    with pytest.raises(ValueError):
+        if isinstance(absdb, MonoAbsorptionDatabase):
+            absdb.eval_sigma_a_mono(
+                w=350.0 * ureg.nm, thermoprops=thermoprops_us_standard
+            )
+        elif isinstance(absdb, CKDAbsorptionDatabase):
+            absdb.eval_sigma_a_ckd(
+                w=350.0 * ureg.nm, g=0.5, thermoprops=thermoprops_us_standard
+            )
+        else:
+            assert False, "unhandled case"

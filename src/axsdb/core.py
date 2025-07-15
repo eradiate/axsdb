@@ -66,6 +66,9 @@ class AbsorptionDatabase:
     cache : cachetools.LRUCache, optional
         A mapping that implements an LRU caching policy.
 
+    error_handling_config : ErrorHandlingConfiguration, optional
+        Default error handling policy. If unset, a global default is used.
+
     Notes
     -----
     A file index, stored as the :attr:`_index` private attribute, associates
@@ -144,6 +147,33 @@ class AbsorptionDatabase:
 
     #: A mapping that implements an LRU caching policy.
     _cache: LRUCache = attrs.field(factory=lambda: LRUCache(8), repr=False)
+
+    #: Default error handling policy. If unset, the global default is used.
+    _error_handling_config: ErrorHandlingConfiguration | None = attrs.field(
+        default=None
+    )
+
+    @property
+    def error_handling_config(self) -> ErrorHandlingConfiguration:
+        """
+        Default error handling policy. If unset, the global default is used.
+        """
+        return (
+            self._error_handling_config
+            if self._error_handling_config is not None
+            else get_error_handling_config()
+        )
+
+    @error_handling_config.setter
+    def error_handling_config(self, value: Any) -> None:
+        try:
+            self._error_handling_config = (
+                None if value is None else ErrorHandlingConfiguration.convert(value)
+            )
+        except Exception as e:
+            raise ValueError(
+                "value cannot be converted to an ErrorHandlingConfiguration"
+            ) from e
 
     def __attrs_post_init__(self):
         # Parse field names and units
@@ -534,7 +564,8 @@ class AbsorptionDatabase:
     ) -> xr.DataArray:
         """
         Compute the absorption coefficient given spectral coordinates and a
-        thermophysical profile (mono variant).
+        thermophysical profile (mono variant). The default implementation
+        raises.
 
         Parameters
         ----------
@@ -545,21 +576,17 @@ class AbsorptionDatabase:
             The thermophysical profile for which the absorption coefficient is
             evaluated.
 
-        error_handling_config : .ErrorHandlingConfiguration, optional
+        error_handling_config : ErrorHandlingConfiguration, optional
             The error handling policy applied if coordinates are missing, do not
             have the appropriate dimension or are out of the dataset's bounds.
-            If unset, the default policy specified by the
-            ``absorption_dataset.error_handling`` setting is applied.
+            If set, this overrides the configuration set in
+            :data:`error_handling_config`.
 
         Returns
         -------
-        DataArray
+        ~xarray.DataArray
             A data array containing the evaluated absorption coefficient as a
             function of the spectral coordinate and altitude.
-
-        See Also
-        --------
-        :mod:`eradiate.config`
         """
         raise NotImplementedError
 
@@ -572,7 +599,7 @@ class AbsorptionDatabase:
     ) -> xr.DataArray:
         """
         Compute the absorption coefficient given spectral coordinates and a
-        thermophysical profile (CKD variant).
+        thermophysical profile (CKD variant). The default implementation raises.
 
         Parameters
         ----------
@@ -586,21 +613,17 @@ class AbsorptionDatabase:
             The thermophysical profile for which the absorption coefficient is
             evaluated.
 
-        error_handling_config : .ErrorHandlingConfiguration, optional
-            The error handling policy applied if corrdinates are missing, do not
+        error_handling_config : ErrorHandlingConfiguration, optional
+            The error handling policy applied if coordinates are missing, do not
             have the appropriate dimension or are out of the dataset's bounds.
-            If unset, the default policy specified by the
-            ``absorption_dataset.error_handling`` setting is applied.
+            If set, this overrides the configuration set in
+            :data:`error_handling_config`.
 
         Returns
         -------
-        DataArray
+        ~xarray.DataArray
             A data array containing the evaluated absorption coefficient as a
             function of the spectral coordinate and altitude.
-
-        See Also
-        --------
-        :mod:`eradiate.config`
         """
         raise NotImplementedError
 
@@ -715,7 +738,7 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
         # Inherit docstring
 
         if error_handling_config is None:
-            error_handling_config = get_error_handling_config()
+            error_handling_config = self.error_handling_config
 
         # Lookup dataset
         ds = self.lookup_datasets(wl=w)[0]
@@ -816,7 +839,7 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
         # TODO: Use the 'assume_sorted' parameter of DataArray.interp()
 
         if error_handling_config is None:
-            error_handling_config = get_error_handling_config()
+            error_handling_config = self.error_handling_config
 
         # Lookup dataset
         ds = self.lookup_datasets(wl=w)[0]

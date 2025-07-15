@@ -150,12 +150,13 @@ def handle_error(error: InterpolationError, action: ErrorHandlingAction):
     raise NotImplementedError
 
 
+#: Global default error handling configuration
 _DEFAULT_ERROR_HANDLING_CONFIG: ErrorHandlingConfiguration | None = None
 
 
 def set_error_handling_config(value: Mapping | ErrorHandlingConfiguration) -> None:
     """
-    Set the error handling configuration.
+    Set the global default error handling configuration.
 
     Parameters
     ----------
@@ -176,7 +177,7 @@ def set_error_handling_config(value: Mapping | ErrorHandlingConfiguration) -> No
 
 def get_error_handling_config() -> ErrorHandlingConfiguration:
     """
-    Retrieve the current error handling configuration.
+    Retrieve the current global default error handling configuration.
 
     Returns
     -------
