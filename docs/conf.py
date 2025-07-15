@@ -1,9 +1,12 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import axsdb
+
 project = "axsdb"
 copyright = "2025, Vincent Leroy"
 author = "Vincent Leroy"
+version = axsdb.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

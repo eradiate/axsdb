@@ -397,30 +397,21 @@ class AbsorptionDatabase:
     @property
     def dir_path(self) -> Path:
         """
-        Returns
-        -------
-        Path
-            Database root path.
+        Database root path.
         """
         return self._dir_path
 
     @property
     def metadata(self) -> dict:
         """
-        Returns
-        -------
-        dict
-            Database metadata.
+        Database metadata.
         """
         return self._metadata
 
     @property
     def spectral_coverage(self) -> pd.DataFrame:
         """
-        Returns
-        -------
-        DataFrame
-            Spectral coverage table.
+        Spectral coverage table.
         """
         return self._spectral_coverage
 
@@ -555,7 +546,7 @@ class AbsorptionDatabase:
             evaluated.
 
         error_handling_config : .ErrorHandlingConfiguration, optional
-            The error handling policy applied if corrdinates are missing, do not
+            The error handling policy applied if coordinates are missing, do not
             have the appropriate dimension or are out of the dataset's bounds.
             If unset, the default policy specified by the
             ``absorption_dataset.error_handling`` setting is applied.
@@ -665,10 +656,6 @@ class AbsorptionDatabase:
 class MonoAbsorptionDatabase(AbsorptionDatabase):
     """
     Absorption coefficient database (monochromatic variant).
-
-    See Also
-    --------
-    AbsorptionDatabase
     """
 
     @staticmethod
@@ -757,10 +744,6 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
 class CKDAbsorptionDatabase(AbsorptionDatabase):
     """
     Absorption coefficient database (CKD variant).
-
-    See Also
-    --------
-    AbsorptionDatabase
     """
 
     @staticmethod

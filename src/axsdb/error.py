@@ -89,13 +89,13 @@ class ErrorHandlingConfiguration:
 
     Parameters
     ----------
-    x : .ErrorHandlingPolicy
+    x : ErrorHandlingPolicy
         Error handling policy for species concentrations.
 
-    p : .ErrorHandlingPolicy
+    p : ErrorHandlingPolicy
         Error handling policy for pressure.
 
-    t : .ErrorHandlingPolicy
+    t : ErrorHandlingPolicy
         Error handling policy for temperature.
     """
 
