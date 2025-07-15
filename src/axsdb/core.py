@@ -7,7 +7,6 @@ import logging
 import os
 import re
 import textwrap
-import warnings
 from pathlib import Path
 from typing import Any, Callable, Hashable, Literal
 
@@ -46,8 +45,8 @@ class AbsorptionDatabase:
     attribute.
 
     Databases are usually not initialized using the constructor, but rather
-    using the class method constructors :meth:`from_directory`,
-    :meth:`from_name` and :meth:`from_dict`.
+    using the class method constructors :meth:`from_directory` and
+    :meth:`from_dict`.
 
     Parameters
     ----------
@@ -377,8 +376,6 @@ class AbsorptionDatabase:
         -----
         Conversion rules are as follows:
 
-        * If ``value`` is a string, try converting using the :meth:`.from_name`
-          constructor. Do not raise if this fails.
         * If ``value`` is a string or a path, try converting using the
           :meth:`.from_directory` constructor. The returned type is consistent
           with the active mode.
@@ -386,12 +383,6 @@ class AbsorptionDatabase:
           constructor. The returned type is consistent with the active mode.
         * Otherwise, do not convert.
         """
-        if isinstance(value, str):
-            try:
-                return AbsorptionDatabase.from_name(value)
-            except ValueError:
-                pass
-
         if isinstance(value, (str, Path, dict)):
             cls = get_absdb_type(mode)
 
@@ -400,17 +391,6 @@ class AbsorptionDatabase:
 
             if isinstance(value, dict):
                 return cls.from_dict(value)
-
-        # Legacy behaviour
-        if isinstance(value, (tuple, list)) and isinstance(value[0], str):
-            warnings.warn(
-                "Initializing an atmospheric molecular absorption database "
-                "from a tuple is deprecated: specifying the spectral range is "
-                "no longer necessary. Passing the database name is now enough. "
-                "Support for this syntax will be removed in a future version.",
-                DeprecationWarning,
-            )
-            return AbsorptionDatabase.from_name(value[0])
 
         return value
 
