@@ -160,8 +160,7 @@ dependencies = [
     { name = "scipy", version = "1.13.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "scipy", version = "1.15.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "typer" },
-    { name = "xarray", version = "2024.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "xarray", version = "2025.1.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "xarray" },
 ]
 
 [package.dev-dependencies]
@@ -226,7 +225,7 @@ requires-dist = [
     { name = "pint" },
     { name = "scipy" },
     { name = "typer" },
-    { name = "xarray" },
+    { name = "xarray", specifier = "!=2025.1.*,!=2025.3.*,!=2025.4.*,!=2025.6.*" },
 ]
 
 [package.metadata.requires-dev]
@@ -1004,14 +1003,14 @@ wheels = [
 
 [[package]]
 name = "importlib-metadata"
-version = "8.6.1"
+version = "8.7.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "zipp", marker = "python_full_version < '3.10'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/33/08/c1395a292bb23fd03bdf572a1357c5a733d3eecbab877641ceacab23db6e/importlib_metadata-8.6.1.tar.gz", hash = "sha256:310b41d755445d74569f993ccfc22838295d9fe005425094fad953d7f15c8580", size = 55767, upload-time = "2025-01-20T22:21:30.429Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/76/66/650a33bd90f786193e4de4b3ad86ea60b53c89b669a5c7be931fac31cdb0/importlib_metadata-8.7.0.tar.gz", hash = "sha256:d13b81ad223b890aa16c5471f2ac3056cf76c5f10f82d6f9292f0b415f389000", size = 56641, upload-time = "2025-04-27T15:29:01.736Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/79/9d/0fb148dc4d6fa4a7dd1d8378168d9b4cd8d4560a6fbf6f0121c5fc34eb68/importlib_metadata-8.6.1-py3-none-any.whl", hash = "sha256:02a89390c1e15fdfdc0d7c6b25cb3e62650d0494005c97d6f148bf5b9787525e", size = 26971, upload-time = "2025-01-20T22:21:29.177Z" },
+    { url = "https://files.pythonhosted.org/packages/20/b0/36bd937216ec521246249be3bf9855081de4c5e06a0c9b4219dbeda50373/importlib_metadata-8.7.0-py3-none-any.whl", hash = "sha256:e5dd1551894c77868a30651cef00984d50e1002d06942a7101d34870c5f02afd", size = 27656, upload-time = "2025-04-27T15:29:00.214Z" },
 ]
 
 [[package]]
@@ -3599,13 +3598,11 @@ wheels = [
 name = "xarray"
 version = "2024.7.0"
 source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version < '3.10'",
-]
 dependencies = [
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
-    { name = "packaging", marker = "python_full_version < '3.10'" },
-    { name = "pandas", marker = "python_full_version < '3.10'" },
+    { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "packaging" },
+    { name = "pandas" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/84/e8/8ee12706df0d34ad04b3737621a73432458d47bc8abfbd6f049e51ca89c3/xarray-2024.7.0.tar.gz", hash = "sha256:4cae512d121a8522d41e66d942fb06c526bc1fd32c2c181d5fe62fe65b671638", size = 3728663, upload-time = "2024-07-30T08:31:45.48Z" }
 wheels = [
@@ -3613,29 +3610,10 @@ wheels = [
 ]
 
 [[package]]
-name = "xarray"
-version = "2025.1.2"
-source = { registry = "https://pypi.org/simple" }
-resolution-markers = [
-    "python_full_version >= '3.12'",
-    "python_full_version == '3.11.*'",
-    "python_full_version == '3.10.*'",
-]
-dependencies = [
-    { name = "numpy", version = "2.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
-    { name = "packaging", marker = "python_full_version >= '3.10'" },
-    { name = "pandas", marker = "python_full_version >= '3.10'" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/89/c0/edb2f6cfafa5369106f927409f6211141c3296c14877cc634d8ee4c970a4/xarray-2025.1.2.tar.gz", hash = "sha256:e7675c79ac69d274dd3b3c5450ce57176928d2792947576251ed1c7df1783224", size = 3271214, upload-time = "2025-01-31T07:37:12.385Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/79/4e19100342fe13d69fd6e77b343e2269924fec681258e2ea21b55576aad2/xarray-2025.1.2-py3-none-any.whl", hash = "sha256:a7ad6a36c6e0becd67f8aff6a7808d20e4bdcd344debb5205f0a34b1a4a7f8d6", size = 1247773, upload-time = "2025-01-31T07:37:09.811Z" },
-]
-
-[[package]]
 name = "zipp"
-version = "3.21.0"
+version = "3.23.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/3f/50/bad581df71744867e9468ebd0bcd6505de3b275e06f202c2cb016e3ff56f/zipp-3.21.0.tar.gz", hash = "sha256:2c9958f6430a2040341a52eb608ed6dd93ef4392e02ffe219417c1b28b5dd1f4", size = 24545, upload-time = "2024-11-10T15:05:20.202Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e3/02/0f2892c661036d50ede074e376733dca2ae7c6eb617489437771209d4180/zipp-3.23.0.tar.gz", hash = "sha256:a07157588a12518c9d4034df3fbbee09c814741a33ff63c05fa29d26a2404166", size = 25547, upload-time = "2025-06-08T17:06:39.4Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b7/1a/7e4798e9339adc931158c9d69ecc34f5e6791489d469f5e50ec15e35f458/zipp-3.21.0-py3-none-any.whl", hash = "sha256:ac1bbe05fd2991f160ebce24ffbac5f6d11d83dc90891255885223d42b3cd931", size = 9630, upload-time = "2024-11-10T15:05:19.275Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/54/647ade08bf0db230bfea292f893923872fd20be6ac6f53b2b936ba839d75/zipp-3.23.0-py3-none-any.whl", hash = "sha256:071652d6115ed432f5ce1d34c336c0adfd6a884660d1e9712a256d3d3bd4b14e", size = 10276, upload-time = "2025-06-08T17:06:38.034Z" },
 ]
