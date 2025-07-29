@@ -50,7 +50,8 @@ html_title = "axsdb"
 # https://shibuya.lepture.com/
 html_theme = "shibuya"
 html_theme_options = {
-    "accent_color": "indigo",
+    "accent_color": "orange",
     "navigation_with_keys": True,
     "github_url": "https://github.com/eradiate/axsdb",
 }
+html_logo = "_static/logo_axsdb.svg"
