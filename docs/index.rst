@@ -6,8 +6,8 @@ AxsDB documentation
 
 **Date**: |today| | **Version**: |version|
 
-AxsDB is provides an interface to `Eradiate <https://eradiate.eu>`_\ 's
-absorption cross section databases.
+AxsDB provides an interface to the absorption cross section databases
+of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
 
 .. grid:: 1 1 2 3
     :gutter: 2
