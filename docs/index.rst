@@ -31,3 +31,10 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
     getting_started
     formats
     api
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+    :caption: Development
+
+    dev/interpolation
