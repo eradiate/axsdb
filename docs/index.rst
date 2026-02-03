@@ -29,4 +29,5 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
     :hidden:
 
     getting_started
+    formats
     api
