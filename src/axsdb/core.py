@@ -8,7 +8,8 @@ import os
 import re
 import textwrap
 from pathlib import Path
-from typing import Any, Callable, Hashable, Literal
+from collections.abc import Callable, Hashable
+from typing import Any, Literal
 
 import attrs
 import numpy as np

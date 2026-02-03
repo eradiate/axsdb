@@ -27,6 +27,7 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
 .. toctree::
     :maxdepth: 2
     :hidden:
+    :caption: Usage
 
     getting_started
     formats
@@ -38,3 +39,4 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
     :caption: Development
 
     dev/interpolation
+    Typing <dev/typing>
