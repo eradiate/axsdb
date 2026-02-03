@@ -2,12 +2,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import attrs
-from typing import Callable, Type, TYPE_CHECKING, Any
+from collections.abc import Callable
+from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from axsdb import AbsorptionDatabase
 
-    AbsorptionDatabaseT = Type[AbsorptionDatabase]
+    AbsorptionDatabaseT = type[AbsorptionDatabase]
 
 
 @attrs.define

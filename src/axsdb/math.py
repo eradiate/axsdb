@@ -8,7 +8,7 @@ xarray's interpolation for specific use cases where performance is critical.
 
 from __future__ import annotations
 
-from typing import Literal, Tuple, Union
+from typing import Literal
 
 import numpy as np
 from numba import guvectorize
@@ -180,7 +180,7 @@ def interp1d(
     y: np.ndarray,
     xnew: np.ndarray,
     bounds: Literal["fill", "clamp", "raise"] = "fill",
-    fill_value: Union[float, Tuple[float, float]] = np.nan,
+    fill_value: float | tuple[float, float] = np.nan,
 ) -> np.ndarray:
     """
     Fast 1D linear interpolation.
@@ -358,7 +358,7 @@ def lerp_indices(
     x: np.ndarray,
     xnew: np.ndarray,
     bounds: Literal["fill", "clamp", "raise"] = "fill",
-) -> Tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """
     Precompute left-indices and interpolation weights for linear interpolation.
 

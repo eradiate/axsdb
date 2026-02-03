@@ -9,7 +9,8 @@ https://github.com/pydata/xarray/issues/10683).
 
 from __future__ import annotations
 
-from typing import Dict, Hashable, Literal, Tuple, Union
+from collections.abc import Hashable
+from typing import Literal
 
 import numpy as np
 import xarray as xr
@@ -22,7 +23,7 @@ def _apply_fill_values(
     data: np.ndarray,
     new_coords_arr: np.ndarray,
     old_coords_arr: np.ndarray,
-    dim_fill_value: Union[float, Tuple[float, float]],
+    dim_fill_value: float | tuple[float, float],
 ) -> None:
     """
     Replace NaN values with specified fill values for out-of-bounds points.
@@ -114,8 +115,8 @@ def _decompose_interp_groups(
 
 def _check_uniform_bounds(
     group: list[dict],
-    bounds_dict: Dict[Hashable, Literal["fill", "clamp", "raise"]],
-) -> Tuple[bool, Union[Literal["fill", "clamp", "raise"], None]]:
+    bounds_dict: dict[Hashable, Literal["fill", "clamp", "raise"]],
+) -> tuple[bool, Literal["fill", "clamp", "raise"] | None]:
     """
     Check if all dimensions in a group have uniform bounds mode.
 
@@ -130,6 +131,7 @@ def _check_uniform_bounds(
     -------
     is_uniform : bool
         True if all dimensions have the same bounds mode.
+
     uniform_mode : {"fill", "clamp", "raise"} or None
         The shared bounds mode, or None if not uniform.
     """
@@ -153,7 +155,7 @@ def _check_uniform_bounds(
 def _should_use_fast_path(
     group: list[dict],
     dims: list[Hashable],
-    bounds_dict: Dict[Hashable, Literal["fill", "clamp", "raise"]],
+    bounds_dict: dict[Hashable, Literal["fill", "clamp", "raise"]],
 ) -> bool:
     """
     Determine if group qualifies for scipy.interpn fast path.
@@ -206,8 +208,8 @@ def _interp_group_with_interpn(
     da: xr.DataArray,
     group: list[dict],
     bounds_mode: Literal["fill", "clamp", "raise"],
-    fill_value_dict: Dict[Hashable, Union[float, Tuple[float, float]]],
-) -> Tuple[np.ndarray, list[Hashable]]:
+    fill_value_dict: dict[Hashable, float | tuple[float, float]],
+) -> tuple[np.ndarray, list[Hashable]]:
     """
     Interpolate multiple dimensions at once using scipy.interpn.
 
@@ -344,16 +346,12 @@ def _interp_group_with_interpn(
 
 def interp_dataarray(
     da: xr.DataArray,
-    coords: Dict[Hashable, Union[float, np.ndarray, xr.DataArray]],
-    bounds: Union[
-        Literal["fill", "clamp", "raise"],
-        Dict[Hashable, Literal["fill", "clamp", "raise"]],
-    ] = "fill",
-    fill_value: Union[
-        float,
-        Tuple[float, float],
-        Dict[Hashable, Union[float, Tuple[float, float]]],
-    ] = np.nan,
+    coords: dict[Hashable, float | np.ndarray | xr.DataArray],
+    bounds: Literal["fill", "clamp", "raise"]
+    | dict[Hashable, Literal["fill", "clamp", "raise"]] = "fill",
+    fill_value: float
+    | tuple[float, float]
+    | dict[Hashable, float | tuple[float, float]] = np.nan,
 ) -> xr.DataArray:
     """
     Fast linear interpolation for xarray DataArrays.
@@ -463,7 +461,7 @@ def interp_dataarray(
     """
     # Normalize bounds to dict format
     if isinstance(bounds, str):
-        bounds_dict: Dict[Hashable, Literal["fill", "clamp", "raise"]] = {
+        bounds_dict: dict[Hashable, Literal["fill", "clamp", "raise"]] = {
             dim: bounds for dim in coords
         }
     else:
@@ -476,7 +474,7 @@ def interp_dataarray(
     if isinstance(fill_value, (int, float)) or (
         isinstance(fill_value, tuple) and len(fill_value) == 2
     ):
-        fill_value_dict: Dict[Hashable, Union[float, Tuple[float, float]]] = {
+        fill_value_dict: dict[Hashable, float | tuple[float, float]] = {
             dim: fill_value for dim in coords
         }
     else:
@@ -552,7 +550,7 @@ def interp_dataarray(
 
     # --- Decompose into groups for potential fast path ---
     # Group specs by destination dimensions. When multiple source dims map to
-    # the same destination (e.g., t, p, x_H2O all -> z), processing them together
+    # the same destination (e.g. t, p, x_H2O all -> z), processing them together
     # with scipy.interpn is much faster than sequential 1D interpolation.
     interp_groups = _decompose_interp_groups(interp_specs)
 
