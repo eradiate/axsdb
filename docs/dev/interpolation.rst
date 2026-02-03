@@ -98,7 +98,8 @@ At the core of our linear interpolation machinery lies the
 ``interp1d()`` and its core logic is implemented as a Numba generalized
 universal function (*gufunc*). Numba's :func:`numba.guvectorize` decorator turns
 out to be an easy way to do this, so this is the solution we went with: it
-automates broadcasting on spectator dimensions, similar to :func:`scipy.interpolation.interp1d`.
+automates broadcasting on spectator dimensions, similar to
+:func:`scipy.interpolation.interp1d`.
 
 To avoid a bottleneck due to an excessive amount of redundant binary searches
 (we assume irregular grids), we added two functions to pre-compute
@@ -131,7 +132,8 @@ the following optimizations:
   with the working data, indexes are precomputed once and applied pointwise.
   This avoids redundant binary searches across the shared dimension.
 
-Although Scipy's ``interpn()`` remains faster according to our benchmarks, chained univariate interpolations are the only way that allows for the
+Although Scipy's ``interpn()`` remains faster according to our benchmarks,
+chained univariate interpolations are the only way that allows for the
 implementation of per-dimension OOB handling. That said, it is often possible to
 group dimensions that share identical OOB handling policies and offload their
 interpolation to ``interpn()``: this is the last optimization which is
@@ -142,4 +144,69 @@ the best performance in all the scenarios we tested.
 Benchmarks
 ^^^^^^^^^^
 
-*TBD*
+A good indicator of the performance of this customized linear interpolation
+infrastructure is the ``InterpDataArrayThermophysical`` benchmark series. It
+compares the runtime of equivalent interpolations with this implementation and
+xarray alternatives. The speedup metric compares Eradiate's original sequential
+implementation based on xarray and our custom solution. For comparison, the
+corresponding multidimensional interpolation done with xarray is also shown.
+
+With xarray v2024.11, our implementation outperforms both the sequential and
+multidimensional approaches.
+
+.. list-table:: Benchmark (Python 3.11, xarray v2024.11)
+    :header-rows: 1
+
+    - * z-levels
+      * xarray_seq
+      * xarray_multi
+      * custom
+      * speedup
+    - * 121
+      * 12.4±0.1ms
+      * 2.07±0.02ms
+      * 854±3μs
+      * ×14.5
+    - * 1201
+      * 43.3±0.9ms
+      * 3.27±0.01ms
+      * 1.84±0.03ms
+      * ×23.5
+    - * 12001
+      * 338±2ms
+      * 18.2±0.07ms
+      * 15.5±0.05ms
+      * ×21.8
+
+With xarray v2026.1, the sequential implementation becomes so slow it cannot
+finish within the 10s timeout limit.
+
+.. list-table:: Benchmark (Python 3.11, xarray v2026.1)
+    :header-rows: 1
+
+    - * z-levels
+      * xarray_seq
+      * xarray_multi
+      * custom
+      * speedup
+    - * 121
+      * >10s
+      * 3.13±0.01ms
+      * 1.00±0.01ms
+      * ×10000+
+    - * 1201
+      * >10s
+      * 4.34±0.4ms
+      * 1.98±0.03ms
+      * ×5000+
+    - * 12001
+      * >10s
+      * 18.7±0.04ms
+      * 15.2±0.05ms
+      * ×666+
+
+.. admonition:: Details
+    :class: note
+
+    These numbers were obtained with an AMD Ryzen 9 5900X 12-Core Processor
+    running Ubuntu 24.04.3 LTS.

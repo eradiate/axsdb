@@ -11,3 +11,6 @@ wheels/
 docs/_build/
 .idea/
 .coverage
+
+# Benchmark results
+.benchmarks/
