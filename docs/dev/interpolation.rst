@@ -151,62 +151,109 @@ xarray alternatives. The speedup metric compares Eradiate's original sequential
 implementation based on xarray and our custom solution. For comparison, the
 corresponding multidimensional interpolation done with xarray is also shown.
 
-With xarray v2024.11, our implementation outperforms both the sequential and
-multidimensional approaches.
+.. admonition:: Details
+    :class: note
 
-.. list-table:: Benchmark (Python 3.11, xarray v2024.11)
+    These numbers were obtained with an AMD Ryzen 9 5900X 12-Core processor
+    running Ubuntu 24.04.3 LTS.
+
+.. list-table:: DataArray interpolation benchmark (Python 3.11)
     :header-rows: 1
 
-    - * z-levels
+    - * xarray version
+      * z-levels
       * xarray_seq
       * xarray_multi
       * custom
       * speedup
-    - * 121
+    - * 2024.11
+      * 121
       * 12.4±0.1ms
       * 2.07±0.02ms
       * 854±3μs
       * ×14.5
-    - * 1201
+    - *
+      * 1201
       * 43.3±0.9ms
       * 3.27±0.01ms
       * 1.84±0.03ms
       * ×23.5
-    - * 12001
+    - *
+      * 12001
       * 338±2ms
       * 18.2±0.07ms
       * 15.5±0.05ms
       * ×21.8
-
-With xarray v2026.1, the sequential implementation becomes so slow it cannot
-finish within the 10s timeout limit.
-
-.. list-table:: Benchmark (Python 3.11, xarray v2026.1)
-    :header-rows: 1
-
-    - * z-levels
-      * xarray_seq
-      * xarray_multi
-      * custom
-      * speedup
-    - * 121
+    - * 2026.1
+      * 121
       * >10s
       * 3.13±0.01ms
       * 1.00±0.01ms
       * ×10000+
-    - * 1201
+    - *
+      * 1201
       * >10s
       * 4.34±0.4ms
       * 1.98±0.03ms
       * ×5000+
-    - * 12001
+    - *
+      * 12001
       * >10s
       * 18.7±0.04ms
       * 15.2±0.05ms
       * ×666+
 
-.. admonition:: Details
-    :class: note
+* With xarray v2024.11, our implementation outperforms both the sequential and
+  multidimensional approaches.
+* With xarray v2026.1, the sequential implementation becomes so slow it cannot
+  finish within the 10s timeout limit.
 
-    These numbers were obtained with an AMD Ryzen 9 5900X 12-Core Processor
-    running Ubuntu 24.04.3 LTS.
+For practical usage, we benchmark the evaluation of the CKD absorption database.
+In constrast with the interpolation-focused benchmark, this one also includes
+the database lookup overhead.
+
+.. list-table:: CKD absorption database evaluation benchmark (Python 3.11)
+    :header-rows: 1
+
+    - * xarray version
+      * z-levels
+      * xarray_seq
+      * custom
+      * speedup
+    - * 2024.11
+      * 121
+      * 7.39±0.1ms
+      * 2.69±0.08ms
+      * ×2.74
+    - *
+      * 1201
+      * 7.83±0.08ms
+      * 2.76±0.05ms
+      * ×2.83
+    - *
+      * 12001
+      * 15.1±0.4ms
+      * 3.85±3ms
+      * ×3.92
+    - * 2026.1
+      * 121
+      * 106±2ms
+      * 2.89±0.06ms
+      * ×36.7
+    - *
+      * 1201
+      * 946±2ms
+      * 2.96±0.03ms
+      * ×320
+    - *
+      * 12001
+      * 9.67±0.3s
+      * 3.71±0.06ms
+      * ×2606
+
+* With xarray v2024.11, the new implementation based on custom gufuncs
+  outperforms the legacy sequential implementation by a factor of ~3.
+* With xarray v2026.1, the new implementation based on custom gufuncs
+  displays low sensitivity to the z grid density while the legacy sequential
+  implementation becomes so slow that it is no longer usable in the same
+  situations as before.
