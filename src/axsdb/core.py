@@ -7,8 +7,8 @@ import logging
 import os
 import re
 import textwrap
-from pathlib import Path
 from collections.abc import Callable, Hashable
+from pathlib import Path
 from typing import Any, Literal
 
 import attrs
@@ -24,6 +24,7 @@ from .error import (
     ErrorHandlingConfiguration,
     get_error_handling_config,
 )
+from .interpolation import interp_dataarray
 from .typing import PathLike
 from .units import ensure_units, ureg, xarray_to_quantity
 
@@ -635,25 +636,7 @@ class AbsorptionDatabase:
         thermoprops: xr.Dataset,
         error_handling_config: ErrorHandlingConfiguration,
     ) -> tuple[xr.DataArray, list[Hashable]]:
-        # Interpolate on temperature
-        bounds_error = error_handling_config.t.bounds is ErrorHandlingAction.RAISE
-        fill_value = None if bounds_error else 0.0  # TODO: use 2-element tuple?
-        result = da.interp(
-            t=thermoprops["t"],
-            kwargs={"bounds_error": bounds_error, "fill_value": fill_value},
-        )
-
-        # Interpolate on pressure
-        bounds_error = error_handling_config.p.bounds is ErrorHandlingAction.RAISE
-        fill_value = None if bounds_error else 0.0  # TODO: use 2-element tuple?
-        result = result.interp(
-            p=thermoprops["p"],
-            kwargs={"bounds_error": bounds_error, "fill_value": fill_value},
-        )
-
-        # Interpolate on concentrations
-
-        # -- List requested species concentrations
+        # List requested species concentrations
         x_ds = [coord for coord in ds.coords if coord.startswith("x_")]
         x_ds_scalar = [coord for coord in x_ds if ds[coord].size == 1]
         x_ds_array = set(x_ds) - set(x_ds_scalar)
@@ -662,16 +645,41 @@ class AbsorptionDatabase:
         x_missing = set(x_ds_array) - set(x_thermoprops)
         x_ds_array = x_ds_array - x_missing
 
-        # -- Select on scalar coordinates
-        result = result.isel(**{x: 0 for x in x_ds_scalar + list(x_missing)})
+        # Select on scalar coordinates and missing concentrations
+        result = da.isel(**{x: 0 for x in x_ds_scalar + list(x_missing)})
 
-        # -- Interpolate on array coordinates
-        bounds_error = error_handling_config.x.bounds is ErrorHandlingAction.RAISE
-        fill_value = None if bounds_error else 0.0  # TODO: use 2-element tuple?
-        result = result.interp(
-            thermoprops[x_ds_array],
-            kwargs={"bounds_error": bounds_error, "fill_value": fill_value},
+        # Build interpolation parameters
+        coords = {"t": thermoprops["t"], "p": thermoprops["p"]}
+
+        for x in x_ds_array:
+            coords[x] = thermoprops[x]
+
+        bounds = {
+            "t": (
+                "raise"
+                if error_handling_config.t.bounds is ErrorHandlingAction.RAISE
+                else "fill"
+            ),
+            "p": (
+                "raise"
+                if error_handling_config.p.bounds is ErrorHandlingAction.RAISE
+                else "fill"
+            ),
+        }
+        x_bounds = (
+            "raise"
+            if error_handling_config.x.bounds is ErrorHandlingAction.RAISE
+            else "fill"
         )
+        for x in x_ds_array:
+            bounds[x] = x_bounds
+
+        # Use fill_value=0.0 for all dimensions when not raising
+        # TODO: use 2-tuple?
+        fill_value = {dim: 0.0 for dim in coords}
+
+        # Perform interpolation
+        result = interp_dataarray(result, coords, bounds=bounds, fill_value=fill_value)
 
         return result, x_ds
 
@@ -757,7 +765,7 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
         )
 
         # Drop thermophysical coordinates, ensure spectral dimension
-        result = result.drop_vars(["p", "t", *x_ds])
+        result = result.drop_vars(["p", "t", *x_ds], errors="ignore")
         if "w" not in result.dims:
             result = result.expand_dims("w")
 
@@ -860,7 +868,7 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
         )
 
         # Drop thermophysical coordinates, ensure spectral dimension
-        result = result.drop_vars(["p", "t", *x_ds])
+        result = result.drop_vars(["p", "t", *x_ds], errors="ignore")
         if "w" not in result.dims:
             result = result.expand_dims("w")
 
