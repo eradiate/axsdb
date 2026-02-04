@@ -78,4 +78,4 @@ docs-lock = { cmd = "uv export --frozen --no-hashes --output-file=docs/requireme
 test = { cmd = "pytest tests", cwd = "." }
 test-cov = { cmd = "pytest --cov=src", cwd = "." }
 test-cov-report = { cmd = "pytest --cov=src --cov-report=html", cwd = "." }
-benchmark = { cmd = "pytest --benchmark-columns=mean,stddev benchmarks", cwd = "." }
+benchmark = { cmd = "pytest benchmarks", cwd = "." }
