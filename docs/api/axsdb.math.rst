@@ -1,9 +1,7 @@
-:tocdepth: 2
+﻿axsdb.math
+==========
 
-API reference
-=============
-
-.. automodule:: axsdb
+.. automodule:: axsdb.math
     :autosummary:
     :members:
     :show-inheritance:

@@ -36,6 +36,7 @@ intersphinx_mapping = {
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
     "pandas": ("https://pandas.pydata.org/docs/", None),
     "cachetools": ("https://cachetools.readthedocs.io/en/stable/", None),
+    "pint": ("https://pint.readthedocs.io/en/stable/", None),
 }
 
 
