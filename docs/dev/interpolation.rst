@@ -144,6 +144,9 @@ the best performance in all the scenarios we tested.
 Benchmarks
 ^^^^^^^^^^
 
+.. seealso::
+    :doc:`benchmarking`
+
 A good indicator of the performance of this customized linear interpolation
 infrastructure is the ``InterpDataArrayThermophysical`` benchmark series. It
 compares the runtime of equivalent interpolations with this implementation and
