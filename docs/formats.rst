@@ -18,10 +18,13 @@ data layout:
 * **Correlated-k distribution (Ac-CKD)**: Band-averaged data with quadrature
   points for efficient band calculations.
 
-These formats were historically designed for the Eradiate radiative transfer
-model and have been applied fixes to work around critical performance issues.
-As a result, some design decisions may look unintuitive. Addressing the flaws of
-the chosen data layout is foreseen in a new iteration of this database format.
+.. note::
+
+    These formats were historically designed for the Eradiate radiative transfer
+    model and have been applied fixes to work around critical performance
+    issues. As a result, some design decisions may look unintuitive. Addressing
+    the flaws of the chosen data layout is foreseen in a new iteration of this
+    database format.
 
 Common structure and metadata
 -----------------------------
