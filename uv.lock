@@ -244,7 +244,7 @@ requires-dist = [
     { name = "pint" },
     { name = "scipy" },
     { name = "typer" },
-    { name = "xarray", specifier = "!=2025.1.*,!=2025.3.*,!=2025.4.*,!=2025.6.*" },
+    { name = "xarray", specifier = ">=2024.7.0" },
 ]
 
 [package.metadata.requires-dev]
