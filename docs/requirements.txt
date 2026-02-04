@@ -210,7 +210,11 @@ watchfiles==1.0.4
     # via sphinx-autobuild
 websockets==15.0.1
     # via sphinx-autobuild
-xarray==2024.7.0
+xarray==2024.7.0 ; python_full_version < '3.10'
+    # via axsdb
+xarray==2024.11.0 ; python_full_version == '3.10.*'
+    # via axsdb
+xarray==2026.1.0 ; python_full_version >= '3.11'
     # via axsdb
 zipp==3.23.0 ; python_full_version < '3.10'
     # via importlib-metadata
