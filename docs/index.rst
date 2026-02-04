@@ -31,7 +31,13 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
 
     getting_started
     formats
-    api
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+    :caption: API reference
+
+    api/axsdb
 
 .. toctree::
     :maxdepth: 2
