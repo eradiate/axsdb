@@ -31,7 +31,7 @@ from .units import ensure_units, ureg, xarray_to_quantity
 logger = logging.getLogger("axsdb")
 
 
-@attrs.define(repr=False, eq=False)
+@attrs.define(slots=False, repr=False, eq=False)
 class AbsorptionDatabase:
     """
     Common parent type for absorption coefficient databases.
