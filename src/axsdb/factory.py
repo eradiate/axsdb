@@ -128,7 +128,11 @@ class AbsorptionDatabaseFactory:
         AbsorptionDatabase
             Created database instance.
         """
-        entry = self._registry[name]
+        try:
+            entry = self._registry[name]
+        except KeyError:
+            raise ValueError(f"no database registered under the name '{name}'")
+
         cls = entry.cls
         path = entry.path()
         kwargs = {**entry.kwargs, **kwargs}

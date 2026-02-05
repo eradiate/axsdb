@@ -1,3 +1,4 @@
+import pytest
 from axsdb import CKDAbsorptionDatabase, MonoAbsorptionDatabase
 from axsdb import AbsorptionDatabaseFactory
 
@@ -16,3 +17,6 @@ def test_factory(shared_datadir):
 
     assert isinstance(factory.create("nanockd"), CKDAbsorptionDatabase)
     assert isinstance(factory.create("nanomono"), MonoAbsorptionDatabase)
+
+    with pytest.raises(ValueError, match="no database registered"):
+        factory.create("doesnt_exist")
