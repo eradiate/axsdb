@@ -301,10 +301,16 @@ class AbsorptionDatabase:
 
         Raises
         ------
+        NotADirectoryError
+            If ``dir_path`` does not point to an existing directory.
+
         FileNotFoundError
             If an index file is missing and ``fix`` is ``False``.
         """
         dir_path = Path(dir_path).resolve()
+
+        if not dir_path.is_dir():
+            raise NotADirectoryError(dir_path)
 
         try:
             with open(os.path.join(dir_path, "metadata.json")) as f:

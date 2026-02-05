@@ -11,86 +11,112 @@ from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import ureg
 
 
-def test_mono_construct(shared_datadir):
-    # The dict converter accepts kwargs and can be used to override defaults
-    db = MonoAbsorptionDatabase.from_dict(
-        {
-            "construct": "from_directory",
-            "dir_path": shared_datadir / "nanockd_v1",
-            "lazy": False,
-        }
+class TestFromDirectory:
+    def test_path_exists(self, shared_datadir):
+        assert (
+            MonoAbsorptionDatabase.from_directory(shared_datadir / "nanomono_v1")
+            is not None
+        )
+
+        assert (
+            CKDAbsorptionDatabase.from_directory(shared_datadir / "nanockd_v1")
+            is not None
+        )
+
+    def test_path_doesnt_exist(self):
+        with pytest.raises(NotADirectoryError, match="doesnt_exist"):
+            CKDAbsorptionDatabase.from_directory("doesnt_exist")
+
+
+class TestMonoAbsorptionDatabase:
+    def test_construct(self, shared_datadir):
+        # The dict converter accepts kwargs and can be used to override defaults
+        db = MonoAbsorptionDatabase.from_dict(
+            {
+                "construct": "from_directory",
+                "dir_path": shared_datadir / "nanockd_v1",
+                "lazy": False,
+            }
+        )
+        assert db.lazy is False
+
+    @pytest.mark.parametrize(
+        "w",
+        [
+            [350.0] * ureg.nm,
+            np.linspace(349.0, 351.0, 3) * ureg.nm,
+        ],
+        ids=["scalar", "vector"],
     )
-    assert db.lazy is False
-
-
-@pytest.mark.parametrize(
-    "w",
-    [
-        [350.0] * ureg.nm,
-        np.linspace(349.0, 351.0, 3) * ureg.nm,
-    ],
-    ids=["scalar", "vector"],
-)
-def test_mono_eval(
-    absdb_mono, thermoprops_us_standard, absorption_database_error_handler_config, w
-):
-    sigma_a = absdb_mono.eval_sigma_a_mono(
-        w,
+    def test_eval(
+        self,
+        absdb_mono,
         thermoprops_us_standard,
-        ErrorHandlingConfiguration.convert(absorption_database_error_handler_config),
+        absorption_database_error_handler_config,
+        w,
+    ):
+        sigma_a = absdb_mono.eval_sigma_a_mono(
+            w,
+            thermoprops_us_standard,
+            ErrorHandlingConfiguration.convert(
+                absorption_database_error_handler_config
+            ),
+        )
+
+        # sigma_a should have a shape of (w, z)
+        z = thermoprops_us_standard.z.values
+        assert sigma_a.values.shape == (w.size, z.size)
+
+
+class TestCKDAbsorptionDatabase:
+    def test_ckd_construct(self, shared_datadir):
+        # Additionally, test the dict converter
+        db = CKDAbsorptionDatabase.from_dict(
+            {
+                "construct": "from_directory",
+                "dir_path": shared_datadir / "nanockd_v1",
+                "lazy": True,
+            }
+        )
+        assert db.lazy is True
+
+    @pytest.mark.parametrize(
+        "w, expected",
+        [
+            ({"wl": 350.0}, ["nanockd_v1-345_355.nc"]),
+            ({"wl": 350.0 * ureg.nm}, ["nanockd_v1-345_355.nc"]),
+            ({"wl": 0.35 * ureg.micron}, ["nanockd_v1-345_355.nc"]),
+            ({"wl": [350.0, 350.0]}, ["nanockd_v1-345_355.nc"] * 2),
+        ],
+        ids=[
+            "wl_scalar_unitless",
+            "wl_scalar_nm",
+            "wl_scalar_micron",
+            "wl_array_unitless",
+        ],
     )
+    def test_filename_lookup(self, absdb_ckd, w, expected):
+        assert absdb_ckd.lookup_filenames(**w) == expected
 
-    # sigma_a should have a shape of (w, z)
-    z = thermoprops_us_standard.z.values
-    assert sigma_a.values.shape == (w.size, z.size)
+    @pytest.mark.parametrize("wg", [([350.0] * ureg.nm, 0.5)])
+    def test_eval(
+        self,
+        absdb_ckd,
+        thermoprops_us_standard,
+        absorption_database_error_handler_config,
+        wg,
+    ):
+        sigma_a = absdb_ckd.eval_sigma_a_ckd(
+            *wg,
+            thermoprops=thermoprops_us_standard,
+            error_handling_config=ErrorHandlingConfiguration.convert(
+                absorption_database_error_handler_config
+            ),
+        )
 
-
-def test_ckd_construct(shared_datadir):
-    # Additionally, test the dict converter
-    db = CKDAbsorptionDatabase.from_dict(
-        {
-            "construct": "from_directory",
-            "dir_path": shared_datadir / "nanockd_v1",
-            "lazy": True,
-        }
-    )
-    assert db.lazy is True
-
-
-@pytest.mark.parametrize(
-    "w, expected",
-    [
-        ({"wl": 350.0}, ["nanockd_v1-345_355.nc"]),
-        ({"wl": 350.0 * ureg.nm}, ["nanockd_v1-345_355.nc"]),
-        ({"wl": 0.35 * ureg.micron}, ["nanockd_v1-345_355.nc"]),
-        ({"wl": [350.0, 350.0]}, ["nanockd_v1-345_355.nc"] * 2),
-    ],
-    ids=[
-        "wl_scalar_unitless",
-        "wl_scalar_nm",
-        "wl_scalar_micron",
-        "wl_array_unitless",
-    ],
-)
-def test_ckd_filename_lookup(absdb_ckd, w, expected):
-    assert absdb_ckd.lookup_filenames(**w) == expected
-
-
-@pytest.mark.parametrize("wg", [([350.0] * ureg.nm, 0.5)])
-def test_ckd_eval(
-    absdb_ckd, thermoprops_us_standard, absorption_database_error_handler_config, wg
-):
-    sigma_a = absdb_ckd.eval_sigma_a_ckd(
-        *wg,
-        thermoprops=thermoprops_us_standard,
-        error_handling_config=ErrorHandlingConfiguration.convert(
-            absorption_database_error_handler_config
-        ),
-    )
-
-    # sigma_a should have a shape of (w, z)
-    z = thermoprops_us_standard.z.values
-    assert sigma_a.values.shape == (wg[0].size, z.size)
+        # sigma_a should have a shape of (w, z)
+        z = thermoprops_us_standard.z.values
+        assert sigma_a.values.shape == (wg[0].size, z.size)
 
 
 def test_cache_clear(absdb_ckd):
