@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pytest
 
@@ -173,3 +175,93 @@ def test_error_handling(absdb, thermoprops_us_standard):
             )
         else:
             assert False, "unhandled case"
+
+
+def _eval(absdb, thermoprops, config):
+    """Helper to evaluate absorption with a given error handling config."""
+    ehc = ErrorHandlingConfiguration.convert(config)
+    if isinstance(absdb, MonoAbsorptionDatabase):
+        return absdb.eval_sigma_a_mono(
+            w=350.0 * ureg.nm,
+            thermoprops=thermoprops,
+            error_handling_config=ehc,
+        )
+    elif isinstance(absdb, CKDAbsorptionDatabase):
+        return absdb.eval_sigma_a_ckd(
+            w=350.0 * ureg.nm,
+            g=0.5,
+            thermoprops=thermoprops,
+            error_handling_config=ehc,
+        )
+    else:
+        raise RuntimeError("unhandled case")
+
+
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_bounds_ignore_no_warning(absdb, thermoprops_us_standard):
+    """Test that IGNORE bounds policy does not raise or warn on OOB."""
+    config = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "ignore"},
+    }
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        result = _eval(absdb, thermoprops_us_standard, config)
+
+    assert result is not None
+    assert result.shape[0] > 0
+
+
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_bounds_raise_raises(absdb, thermoprops_us_standard):
+    """Test that RAISE bounds policy raises ValueError on OOB."""
+    config = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
+    }
+
+    with pytest.raises(ValueError):
+        _eval(absdb, thermoprops_us_standard, config)
+
+
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_bounds_warn_emits_warning(absdb, thermoprops_us_standard):
+    """Test that WARN bounds policy emits a warning on OOB without raising."""
+    config = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "warn"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "warn"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "ignore"},
+    }
+
+    with pytest.warns(UserWarning, match="Out-of-bounds"):
+        result = _eval(absdb, thermoprops_us_standard, config)
+
+    # Interpolation should still succeed (with fill values)
+    assert result is not None
+    assert result.shape[0] > 0
+
+
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_bounds_warn_result_matches_ignore(absdb, thermoprops_us_standard):
+    """Test that WARN produces the same interpolation result as IGNORE."""
+    config_ignore = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "ignore"},
+    }
+    config_warn = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "warn"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "warn"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "warn"},
+    }
+
+    result_ignore = _eval(absdb, thermoprops_us_standard, config_ignore)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        result_warn = _eval(absdb, thermoprops_us_standard, config_warn)
+
+    np.testing.assert_array_equal(result_ignore.values, result_warn.values)

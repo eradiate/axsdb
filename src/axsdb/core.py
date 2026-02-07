@@ -22,7 +22,9 @@ from .error import (
     DataError,
     ErrorHandlingAction,
     ErrorHandlingConfiguration,
+    InterpolationError,
     get_error_handling_config,
+    handle_error,
 )
 from .interpolation import interp_dataarray
 from .typing import PathLike
@@ -679,6 +681,33 @@ class AbsorptionDatabase:
         )
         for x in x_ds_array:
             bounds[x] = x_bounds
+
+        # Check for out-of-bounds values on dimensions with WARN policy
+        # and emit warnings before interpolation
+        warn_checks = [
+            ("t", error_handling_config.t.bounds),
+            ("p", error_handling_config.p.bounds),
+        ]
+        for x in x_ds_array:
+            warn_checks.append((x, error_handling_config.x.bounds))
+
+        for dim, action in warn_checks:
+            if action is ErrorHandlingAction.WARN and dim in coords:
+                query_vals = np.atleast_1d(
+                    coords[dim].values
+                    if hasattr(coords[dim], "values")
+                    else coords[dim]
+                )
+                grid_vals = ds[dim].values
+                below = query_vals < grid_vals.min()
+                above = query_vals > grid_vals.max()
+                if np.any(below) or np.any(above):
+                    handle_error(
+                        InterpolationError(
+                            f"Out-of-bounds values detected on dimension '{dim}'"
+                        ),
+                        ErrorHandlingAction.WARN,
+                    )
 
         # Use fill_value=0.0 for all dimensions when not raising
         # TODO: use 2-tuple?
