@@ -9,6 +9,7 @@ from axsdb import (
     ErrorHandlingConfiguration,
     MonoAbsorptionDatabase,
 )
+from axsdb.error import InterpolationError
 from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import ureg
 
@@ -164,7 +165,7 @@ def test_error_handling(absdb, thermoprops_us_standard):
         "t": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
         "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(InterpolationError, match="Out-of-bounds"):
         if isinstance(absdb, MonoAbsorptionDatabase):
             absdb.eval_sigma_a_mono(
                 w=350.0 * ureg.nm, thermoprops=thermoprops_us_standard
@@ -223,7 +224,7 @@ def test_bounds_raise_raises(absdb, thermoprops_us_standard):
         "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
     }
 
-    with pytest.raises(ValueError):
+    with pytest.raises(InterpolationError, match="Out-of-bounds"):
         _eval(absdb, thermoprops_us_standard, config)
 
 
