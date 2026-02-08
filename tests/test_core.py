@@ -8,7 +8,10 @@ from axsdb import (
     MonoAbsorptionDatabase,
 )
 from axsdb.testing.fixtures import *  # noqa: F403
-from axsdb.units import ureg
+from axsdb.units import get_unit_registry
+
+
+ureg = get_unit_registry()
 
 
 class TestFromDirectory:

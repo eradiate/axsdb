@@ -26,7 +26,7 @@ from .error import (
 )
 from .interpolation import interp_dataarray
 from .typing import PathLike
-from .units import ensure_units, ureg, xarray_to_quantity
+from .units import ensure_units, get_unit_registry, xarray_to_quantity
 
 logger = logging.getLogger("axsdb")
 
@@ -179,6 +179,7 @@ class AbsorptionDatabase:
 
     def __attrs_post_init__(self):
         # Parse field names and units
+        ureg = get_unit_registry()
         regex = re.compile(r"(?P<coord>.*)\_(?P<minmax>min|max) \[(?P<units>.*)\]")
         quantities = {}
         for colname in self._index.columns:
@@ -218,6 +219,8 @@ class AbsorptionDatabase:
 
     @staticmethod
     def _make_spectral_coverage(filenames: list[PathLike]) -> pd.DataFrame:
+        ureg = get_unit_registry
+
         with xr.open_dataset(filenames[0]) as ds:
             dims = set(ds.dims)
             db_type = None
@@ -698,6 +701,8 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
 
     @staticmethod
     def _make_index(filenames) -> pd.DataFrame:
+        ureg = get_unit_registry()
+
         headers = [
             "filename",
             "wn_min [cm^-1]",
@@ -752,6 +757,8 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
     ) -> xr.DataArray:
         # Inherit docstring
 
+        ureg = get_unit_registry()
+
         if error_handling_config is None:
             error_handling_config = self.error_handling_config
 
@@ -786,6 +793,8 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
 
     @staticmethod
     def _make_index(filenames) -> pd.DataFrame:
+        ureg = get_unit_registry()
+
         headers = [
             "filename",
             "wn_min [cm^-1]",
@@ -861,6 +870,7 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
 
         # Select bin
         # TODO: Optimize
+        ureg = get_unit_registry()
         w_u = ureg(ds["w"].units)
         w_m = w.m_as(w_u)
         result = ds["sigma_a"].sel(w=w_m, method="nearest")
