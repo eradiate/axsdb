@@ -14,7 +14,7 @@ from typing import Any
 import xarray as xr
 import pint
 
-
+# Internal unit registry. If None, use application registry
 _ureg: pint.UnitRegistry | None = None
 
 
