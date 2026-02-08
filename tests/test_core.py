@@ -7,6 +7,7 @@ from axsdb import (
     ErrorHandlingConfiguration,
     MonoAbsorptionDatabase,
 )
+from axsdb.error import InterpolationError
 from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import get_unit_registry
 
@@ -165,7 +166,7 @@ def test_error_handling(absdb, thermoprops_us_standard):
         "t": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
         "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(InterpolationError, match="Out-of-bounds"):
         if isinstance(absdb, MonoAbsorptionDatabase):
             absdb.eval_sigma_a_mono(
                 w=350.0 * ureg.nm, thermoprops=thermoprops_us_standard
@@ -176,3 +177,60 @@ def test_error_handling(absdb, thermoprops_us_standard):
             )
         else:
             assert False, "unhandled case"
+
+
+def _eval(absdb, thermoprops, config):
+    """Helper to evaluate absorption with a given error handling config."""
+    ehc = ErrorHandlingConfiguration.convert(config)
+    if isinstance(absdb, MonoAbsorptionDatabase):
+        return absdb.eval_sigma_a_mono(
+            w=350.0 * ureg.nm,
+            thermoprops=thermoprops,
+            error_handling_config=ehc,
+        )
+    elif isinstance(absdb, CKDAbsorptionDatabase):
+        return absdb.eval_sigma_a_ckd(
+            w=350.0 * ureg.nm,
+            g=0.5,
+            thermoprops=thermoprops,
+            error_handling_config=ehc,
+        )
+    else:
+        raise RuntimeError("unhandled case")
+
+
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_bounds_policies(absdb, thermoprops_us_standard):
+    """
+    Test OOB handling policies:
+
+    * RAISE raises an exception;
+    * WARN emits a warning and proceeds anyway;
+    * IGNORE proceeds silently.
+    """
+
+    config_raise = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
+    }
+    config_warn = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "warn"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "warn"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "warn"},
+    }
+    config_ignore = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": "ignore"},
+    }
+
+    with pytest.raises(InterpolationError, match="Out-of-bounds"):
+        _eval(absdb, thermoprops_us_standard, config_raise)
+
+    with pytest.warns(UserWarning, match="Out-of-bounds"):
+        result_warn = _eval(absdb, thermoprops_us_standard, config_warn)
+
+    result_ignore = _eval(absdb, thermoprops_us_standard, config_ignore)
+
+    np.testing.assert_array_equal(result_ignore.values, result_warn.values)

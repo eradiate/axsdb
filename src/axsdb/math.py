@@ -20,7 +20,7 @@ _BOUNDS_CLAMP = 1
 _BOUNDS_RAISE = 2
 
 
-def _make_interp1d_gufunc():
+def _make_interp1d_gufunc():  # pragma: no cover
     """
     Create the Numba gufunc for 1D linear interpolation.
 
@@ -142,7 +142,7 @@ def _make_interp1d_gufunc():
     return _interp1d_gufunc_impl
 
 
-def _make_lerp_gufunc():
+def _make_lerp_gufunc():  # pragma: no cover
     """
     Create the numba gufunc for lerp with precomputed indices and weights.
 

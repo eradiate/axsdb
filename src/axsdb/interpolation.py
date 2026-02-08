@@ -416,10 +416,6 @@ def interp_dataarray(
     --------
     Basic multi-dimensional interpolation:
 
-    >>> import numpy as np
-    >>> import xarray as xr
-    >>> from axsdb.interpolation import interp_dataarray
-    >>>
     >>> # Create sample data
     >>> da = xr.DataArray(
     ...     np.random.rand(10, 20, 30),
@@ -444,6 +440,8 @@ def interp_dataarray(
 
     Different bounds handling per dimension:
 
+    >>> new_wavelengths = np.array([450.0, 550.0, 650.0])
+    >>> new_angles = np.array([30.0, 60.0])
     >>> result = interp_dataarray(
     ...     da,
     ...     {"wavelength": new_wavelengths, "angle": new_angles},

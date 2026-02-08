@@ -31,6 +31,7 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
 
     getting_started
     formats
+    error_handling
 
 .. toctree::
     :maxdepth: 2

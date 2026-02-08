@@ -39,6 +39,12 @@ intersphinx_mapping = {
     "pint": ("https://pint.readthedocs.io/en/stable/", None),
 }
 
+autodoc_default_options = {
+    "members": True,
+    "inherited-members": True,
+    "autosummary": True,
+    "show-inheritance": True,
+}
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

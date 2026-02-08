@@ -25,7 +25,13 @@ dependencies = [
 axsdb = "axsdb.cli:main"
 
 [dependency-groups]
-test = ["pytest", "pytest-datadir", "pytest-cov"]
+test = [
+  "pytest",
+  "pytest-datadir",
+  "pytest-cov",
+  "coverage>=7.10.0",
+  "pytest-doctestplus",
+]
 docs = [
   "autodocsumm>=0.2.14",
   "shibuya",
@@ -55,7 +61,12 @@ output = "./reports/coverage/coverage.json"
 equivalent = ["src/", "__pypackages__/"]
 
 [tool.coverage.report]
-omit = ["src/*/__init__.py", "src/*/_version.py"]
+omit = [
+  "src/*/__init__.py",
+  "src/*/cli.py",
+  "src/*/_version.py",
+  "src/*/testing/fixtures.py",
+]
 precision = 2
 show_missing = true
 skip_covered = true
@@ -66,16 +77,19 @@ parallel = true
 source = ["src/"]
 
 [tool.pytest.ini_options]
-testpaths = "tests"
+testpaths = ["tests", "src", "docs"]
 norecursedirs = [".git", ".env", "dist", "__pypackages__"]
 python_files = ["test_*.py", "*_test.py", "tests.py"]
+addopts = "--doctest-plus --doctest-glob='*.rst'"
+doctest_plus = "enabled"
+doctest_optionflags = "NORMALIZE_WHITESPACE ELLIPSIS"
 
 [tool.taskipy.tasks]
 docs = { cmd = "sphinx-build -b html docs docs/_build/html", cwd = "." }
 docs-clean = { cmd = "rm -rf docs/_build/", cwd = "." }
 docs-serve = { cmd = "sphinx-autobuild docs docs/_build/html", cwd = "." }
 docs-lock = { cmd = "uv export --frozen --no-hashes --output-file=docs/requirements.txt", cwd = "." }
-test = { cmd = "pytest tests", cwd = "." }
+test = { cmd = "pytest", cwd = "." }
 test-cov = { cmd = "pytest --cov=src", cwd = "." }
 test-cov-report = { cmd = "pytest --cov=src --cov-report=html", cwd = "." }
 benchmark = { cmd = "pytest benchmarks", cwd = "." }

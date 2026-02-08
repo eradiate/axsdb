@@ -22,7 +22,9 @@ from .error import (
     DataError,
     ErrorHandlingAction,
     ErrorHandlingConfiguration,
+    InterpolationError,
     get_error_handling_config,
+    handle_error,
 )
 from .interpolation import interp_dataarray
 from .typing import PathLike
@@ -663,29 +665,79 @@ class AbsorptionDatabase:
         for x in x_ds_array:
             coords[x] = thermoprops[x]
 
-        bounds = {
-            "t": (
-                "raise"
-                if error_handling_config.t.bounds is ErrorHandlingAction.RAISE
-                else "fill"
-            ),
-            "p": (
-                "raise"
-                if error_handling_config.p.bounds is ErrorHandlingAction.RAISE
-                else "fill"
-            ),
-        }
-        x_bounds = (
-            "raise"
-            if error_handling_config.x.bounds is ErrorHandlingAction.RAISE
-            else "fill"
-        )
-        for x in x_ds_array:
-            bounds[x] = x_bounds
+        # Check bounds for each dimension and apply the configured policy
+        # (IGNORE: skip, WARN: emit warning, RAISE: raise error).
+        # Now supports asymmetric policies for lower and upper bounds.
+        bounds_checks = [
+            ("t", error_handling_config.t),
+            ("p", error_handling_config.p),
+            *[(x, error_handling_config.x) for x in x_ds_array],
+        ]
 
-        # Use fill_value=0.0 for all dimensions when not raising
-        # TODO: use 2-tuple?
-        fill_value = {dim: 0.0 for dim in coords}
+        for dim, policy in bounds_checks:
+            lower_policy, upper_policy = policy.bounds  # Unpack tuple
+
+            query_vals = np.atleast_1d(
+                coords[dim].values if hasattr(coords[dim], "values") else coords[dim]
+            )
+            grid_vals = ds[dim].values
+            below = query_vals < grid_vals.min()
+            above = query_vals > grid_vals.max()
+
+            # Check lower bound
+            if np.any(below) and lower_policy.action is not ErrorHandlingAction.IGNORE:
+                handle_error(
+                    InterpolationError(
+                        f"Out-of-bounds values detected below lower bound on dimension '{dim}'"
+                    ),
+                    lower_policy.action,
+                )
+
+            # Check upper bound
+            if np.any(above) and upper_policy.action is not ErrorHandlingAction.IGNORE:
+                handle_error(
+                    InterpolationError(
+                        f"Out-of-bounds values detected above upper bound on dimension '{dim}'"
+                    ),
+                    upper_policy.action,
+                )
+
+        # Build bounds mode and fill value dicts from error handling config
+        # The interpolation layer supports:
+        # - Symmetric modes: bounds="fill" or "clamp"
+        # - Asymmetric fill values: fill_value=(lower, upper)
+        #
+        # For asymmetric modes (e.g., clamp lower, fill upper), we need to
+        # handle this differently since the interpolation layer doesn't support
+        # per-bound mode control. Strategy:
+        # - If both bounds use "clamp": use bounds="clamp"
+        # - If both bounds use "fill": use bounds="fill" with fill_value tuple
+        # - If mixed: use bounds="fill" and apply clamping manually
+        #   (for now, fall back to "fill" - TODO: implement mixed mode support)
+
+        bounds = {}
+        fill_value = {}
+
+        for dim, policy in bounds_checks:
+            lower_policy, upper_policy = policy.bounds  # Unpack tuple
+
+            # Determine bounds mode
+            if lower_policy.mode == upper_policy.mode:
+                # Symmetric mode
+                bounds[dim] = lower_policy.mode
+            else:
+                # Asymmetric mode: fall back to "fill"
+                bounds[dim] = "fill"
+                # TODO: Implement proper mixed clamp/fill support in interpolation layer
+
+            # Determine fill values (None → NaN)
+            lower_fill = (
+                np.nan if lower_policy.fill_value is None else lower_policy.fill_value
+            )
+            upper_fill = (
+                np.nan if upper_policy.fill_value is None else upper_policy.fill_value
+            )
+            fill_value[dim] = (lower_fill, upper_fill)
 
         # Perform interpolation
         result = interp_dataarray(result, coords, bounds=bounds, fill_value=fill_value)

@@ -43,7 +43,7 @@ class AbsorptionDatabaseFactory:
 
     Instantiate a database:
 
-    >>> factory.create("nanockd")
+    >>> factory.create("nanockd")  # doctest: +SKIP
     """
 
     _registry: dict[str, RegistryEntry] = attrs.field(factory=dict, init=False)
@@ -79,6 +79,7 @@ class AbsorptionDatabaseFactory:
         --------
         Simplest registration pattern:
 
+        >>> factory = AbsorptionDatabaseFactory()
         >>> factory.register(
         ...     name="nanomono", cls=MonoAbsorptionDatabase, path="~/Data/nanomono"
         ... )

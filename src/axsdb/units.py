@@ -18,14 +18,15 @@ import pint
 _ureg: pint.UnitRegistry | None = None
 
 
-def set_unit_registry(ureg: pint.UnitRegistry) -> None:
+def set_unit_registry(ureg: pint.UnitRegistry | None) -> None:
     """
     Set internal unit registry.
 
     Parameters
     ----------
-    ureg : pint.UnitRegistry
-        New default unit registry.
+    ureg : pint.UnitRegistry or None
+        New default unit registry. Set to ``None`̀` to reset to the default
+        (the application registry).
     """
     global _ureg
     _ureg = ureg
