@@ -78,7 +78,7 @@ class BoundsPolicy:
     @classmethod
     def convert(cls, value):
         """
-        Convert various inputs to BoundsPolicy.
+        Convert various inputs to :class:`.BoundsPolicy`.
 
         Parameters
         ----------
@@ -95,6 +95,12 @@ class BoundsPolicy:
         Returns
         -------
         BoundsPolicy
+
+        Raises
+        ------
+        ValueError
+            If the value cannot be converted to a :class:`.BoundsPolicy`
+            instance.
 
         Examples
         --------
@@ -145,7 +151,7 @@ class BoundsPolicy:
                 kwargs["fill_value"] = value["fill_value"]
             return cls(**kwargs)
 
-        return value
+        raise ValueError(f"could not convert value to BoundsPolicy (got {value!r})")
 
 
 def _convert_bounds(value) -> tuple[BoundsPolicy, BoundsPolicy]:
@@ -269,7 +275,7 @@ class ErrorHandlingPolicy:
             return cls(**kwargs)
         else:
             raise ValueError(
-                f"cannot convert value to ErrorHandlingPolicy (got {value!r})"
+                f"could not convert value to ErrorHandlingPolicy (got {value!r})"
             )
 
 
