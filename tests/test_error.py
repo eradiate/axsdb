@@ -1,6 +1,12 @@
 """Tests for error handling configuration."""
 
-from axsdb import BoundsPolicy, ErrorHandlingAction, ErrorHandlingPolicy
+from axsdb import (
+    BoundsPolicy,
+    ErrorHandlingAction,
+    ErrorHandlingConfiguration,
+    ErrorHandlingPolicy,
+    get_error_handling_config,
+)
 from axsdb.error import BoundsMode
 from axsdb.error import _convert_bounds
 
@@ -118,3 +124,87 @@ class TestErrorHandlingPolicy:
         assert policy.bounds[1] == BoundsPolicy(
             action=ErrorHandlingAction.RAISE, mode=BoundsMode.CLAMP
         )
+
+
+class TestErrorHandlingConfiguration:
+    """Test ErrorHandlingConfiguration with partial configs."""
+
+    def test_partial_single_dimension(self):
+        """Override only one dimension."""
+        config = ErrorHandlingConfiguration.convert(
+            {"p": {"missing": "raise", "scalar": "raise", "bounds": "raise"}}
+        )
+        # Check overridden dimension
+        assert config.p.missing == ErrorHandlingAction.RAISE
+        assert config.p.scalar == ErrorHandlingAction.RAISE
+        assert config.p.bounds[0].action == ErrorHandlingAction.RAISE
+        assert config.p.bounds[1].action == ErrorHandlingAction.RAISE
+
+    def test_partial_multiple_dimensions(self):
+        """Override multiple dimensions."""
+        config = ErrorHandlingConfiguration.convert(
+            {
+                "p": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
+                "t": {"bounds": "warn"},
+            }
+        )
+        # Check overridden dimensions
+        assert config.p.bounds[0].action == ErrorHandlingAction.RAISE
+        assert config.t.bounds[0].action == ErrorHandlingAction.WARN
+
+    def test_nested_partial_policy(self):
+        """Override only bounds within a policy."""
+        config = ErrorHandlingConfiguration.convert({"t": {"bounds": "raise"}})
+        default = get_error_handling_config()
+        # Check overridden field
+        assert config.t.bounds[0].action == ErrorHandlingAction.RAISE
+        assert config.t.bounds[1].action == ErrorHandlingAction.RAISE
+        # Check that non-overridden fields match defaults
+        assert config.t.missing == default.t.missing
+        assert config.t.scalar == default.t.scalar
+
+    def test_nested_partial_policy_multiple_fields(self):
+        """Override bounds and scalar within a policy."""
+        config = ErrorHandlingConfiguration.convert(
+            {"t": {"bounds": "raise", "scalar": "warn"}}
+        )
+        default = get_error_handling_config()
+        # Check overridden fields
+        assert config.t.bounds[0].action == ErrorHandlingAction.RAISE
+        assert config.t.scalar == ErrorHandlingAction.WARN
+        # Check that non-overridden field matches default
+        assert config.t.missing == default.t.missing
+
+    def test_empty_dict_uses_all_defaults(self):
+        """Empty dict should return a copy of the default config."""
+        config = ErrorHandlingConfiguration.convert({})
+        default = get_error_handling_config()
+        assert config == default
+
+    def test_complete_configuration_still_works(self):
+        """Complete configurations should work as before (regression test)."""
+        config = ErrorHandlingConfiguration.convert(
+            {
+                "x": {"missing": "ignore", "scalar": "ignore", "bounds": "raise"},
+                "p": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
+                "t": {"missing": "raise", "scalar": "raise", "bounds": "warn"},
+            }
+        )
+        # Verify all fields are set correctly
+        assert config.x.missing == ErrorHandlingAction.IGNORE
+        assert config.x.scalar == ErrorHandlingAction.IGNORE
+        assert config.x.bounds[0].action == ErrorHandlingAction.RAISE
+
+        assert config.p.missing == ErrorHandlingAction.RAISE
+        assert config.p.scalar == ErrorHandlingAction.RAISE
+        assert config.p.bounds[0].action == ErrorHandlingAction.IGNORE
+
+        assert config.t.missing == ErrorHandlingAction.RAISE
+        assert config.t.scalar == ErrorHandlingAction.RAISE
+        assert config.t.bounds[0].action == ErrorHandlingAction.WARN
+
+    def test_direct_instantiation_without_args(self):
+        """Directly instantiating ErrorHandlingConfiguration() uses defaults."""
+        config = ErrorHandlingConfiguration()
+        default = get_error_handling_config()
+        assert config == default

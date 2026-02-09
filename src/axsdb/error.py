@@ -279,6 +279,85 @@ class ErrorHandlingPolicy:
             )
 
 
+def _merge_policy(
+    default_policy: ErrorHandlingPolicy, user_value: Mapping
+) -> ErrorHandlingPolicy:
+    """
+    Merge a partial user policy dict with a complete default policy.
+
+    Parameters
+    ----------
+    default_policy : ErrorHandlingPolicy
+        The complete default policy to use as a base.
+
+    user_value : Mapping
+        A partial dict with one or more of: missing, scalar, bounds.
+
+    Returns
+    -------
+    ErrorHandlingPolicy
+        A complete policy with user values overriding defaults.
+    """
+    kwargs = {
+        "missing": default_policy.missing,
+        "scalar": default_policy.scalar,
+        "bounds": default_policy.bounds,
+    }
+
+    # Override with user-provided values
+    if "missing" in user_value:
+        kwargs["missing"] = ErrorHandlingAction(user_value["missing"])
+    if "scalar" in user_value:
+        kwargs["scalar"] = ErrorHandlingAction(user_value["scalar"])
+    if "bounds" in user_value:
+        kwargs["bounds"] = user_value["bounds"]
+
+    return ErrorHandlingPolicy(**kwargs)
+
+
+def _get_default_policy(dim: str):
+    if dim in {"x", "p", "t"}:
+        config = get_error_handling_config()
+        return getattr(config, dim)
+    raise ValueError(f"unhandled dimension {dim!r}")
+
+
+def _convert_error_handling_policy_with_default(dim: str):
+    """
+    Create a converter for ErrorHandlingPolicy that supports partial configs.
+
+    Parameters
+    ----------
+    dim : str
+        The dimension name ('x', 'p', or 't') to fetch the default for.
+
+    Returns
+    -------
+    callable
+        A converter function for use with attrs.field(converter=...).
+    """
+
+    def converter(value):
+        if value is None:
+            # None means use default - will be handled by factory
+            return None
+
+        # If it's a complete policy or string, convert normally
+        if not isinstance(value, Mapping):
+            return ErrorHandlingPolicy.convert(value)
+
+        # Check if it's a partial policy dict (missing some keys)
+        if set(value.keys()) < {"missing", "scalar", "bounds"}:
+            # Partial policy - merge with default
+            default_policy = _get_default_policy(dim)
+            return _merge_policy(default_policy, value)
+        else:
+            # Complete policy dict
+            return ErrorHandlingPolicy.convert(value)
+
+    return converter
+
+
 @attrs.define
 class ErrorHandlingConfiguration:
     """
@@ -286,19 +365,31 @@ class ErrorHandlingConfiguration:
 
     Parameters
     ----------
-    x : ErrorHandlingPolicy
+    x : ErrorHandlingPolicy, optional
         Error handling policy for species concentrations.
+        If not provided, uses the global default.
 
-    p : ErrorHandlingPolicy
+    p : ErrorHandlingPolicy, optional
         Error handling policy for pressure.
+        If not provided, uses the global default.
 
-    t : ErrorHandlingPolicy
+    t : ErrorHandlingPolicy, optional
         Error handling policy for temperature.
+        If not provided, uses the global default.
     """
 
-    x: ErrorHandlingPolicy = attrs.field(converter=ErrorHandlingPolicy.convert)
-    p: ErrorHandlingPolicy = attrs.field(converter=ErrorHandlingPolicy.convert)
-    t: ErrorHandlingPolicy = attrs.field(converter=ErrorHandlingPolicy.convert)
+    x: ErrorHandlingPolicy = attrs.field(
+        factory=lambda: _get_default_policy("x"),
+        converter=_convert_error_handling_policy_with_default("x"),
+    )
+    p: ErrorHandlingPolicy = attrs.field(
+        factory=lambda: _get_default_policy("p"),
+        converter=_convert_error_handling_policy_with_default("p"),
+    )
+    t: ErrorHandlingPolicy = attrs.field(
+        factory=lambda: _get_default_policy("t"),
+        converter=_convert_error_handling_policy_with_default("t"),
+    )
 
     @classmethod
     def convert(cls, value):

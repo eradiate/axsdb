@@ -77,9 +77,7 @@ Basic setup
     ...     },
     ... }
 
-All top-level dict entries are required, since we must define a policy of
-all coordinates in the database. The
-:meth:`.ErrorHandlingConfiguration.convert` constructor automatically
+The :meth:`.ErrorHandlingConfiguration.convert` constructor automatically
 converts simple configuration keywords to appropriate values, in particular
 for OOB handling entries:
 
@@ -240,3 +238,97 @@ This also works with dictionaries:
             )
         )
     )
+
+Partial configuration
+^^^^^^^^^^^^^^^^^^^^^
+
+You can specify only the dimensions you want to override, with unspecified
+dimensions using values from the global default configuration.
+This is particularly useful when you only need to adjust one aspect of the
+error handling configuration and want to keep all other settings at their
+defaults. Examples:
+
+* Only override pressure policy (other dimensions use defaults)
+
+  .. code-block:: pycon
+      :emphasize-lines: 2,14-21
+
+      >>> config = {
+      ...     "p": {"missing": "raise", "scalar": "raise", "bounds": "raise"}
+      ... }
+      >>> pprint(ErrorHandlingConfiguration.convert(config))
+      ErrorHandlingConfiguration(
+          x=ErrorHandlingPolicy(
+              missing=<IGNORE>,
+              scalar=<IGNORE>,
+              bounds=(
+                  BoundsPolicy(action=<RAISE>, mode=<FILL>, fill_value=0.0),
+                  BoundsPolicy(action=<RAISE>, mode=<FILL>, fill_value=0.0)
+              )
+          ),
+          p=ErrorHandlingPolicy(
+              missing=<RAISE>,
+              scalar=<RAISE>,
+              bounds=(
+                  BoundsPolicy(action=<RAISE>, mode=<FILL>, fill_value=0.0),
+                  BoundsPolicy(action=<RAISE>, mode=<FILL>, fill_value=0.0)
+              )
+          ),
+          t=ErrorHandlingPolicy(
+              missing=<RAISE>,
+              scalar=<RAISE>,
+              bounds=(
+                  BoundsPolicy(action=<IGNORE>, mode=<FILL>, fill_value=0.0),
+                  BoundsPolicy(action=<IGNORE>, mode=<FILL>, fill_value=0.0)
+              )
+          )
+      )
+
+* Only override temperature bounds (missing/scalar use defaults)
+
+  .. code-block:: pycon
+      :emphasize-lines: 1,5-12
+
+      >>> config = {"t": {"bounds": "raise"}}
+      >>> pprint(ErrorHandlingConfiguration.convert(config))
+      ErrorHandlingConfiguration(
+          ...,
+          t=ErrorHandlingPolicy(
+              missing=<RAISE>,
+              scalar=<RAISE>,
+              bounds=(
+                  BoundsPolicy(action=<RAISE>, mode=<FILL>, fill_value=0.0),
+                  BoundsPolicy(action=<RAISE>, mode=<FILL>, fill_value=0.0)
+              )
+          )
+      )
+
+* Override multiple dimensions
+
+  .. code-block:: pycon
+      :emphasize-lines: 2-3,9-14,19-22
+
+      >>> config = {
+      ...     "p": {"missing": "raise", "scalar": "raise", "bounds": "raise"},
+      ...     "t": {"bounds": "warn"}
+      ... }
+      >>> pprint(ErrorHandlingConfiguration.convert(config))
+      ErrorHandlingConfiguration(
+          ...,
+          p=ErrorHandlingPolicy(
+              missing=<RAISE>,
+              scalar=<RAISE>,
+              bounds=(
+                  BoundsPolicy(action=<RAISE>, mode=<FILL>, fill_value=0.0),
+                  BoundsPolicy(action=<RAISE>, mode=<FILL>, fill_value=0.0)
+              )
+          ),
+          t=ErrorHandlingPolicy(
+              missing=<RAISE>,
+              scalar=<RAISE>,
+              bounds=(
+                  BoundsPolicy(action=<WARN>, mode=<FILL>, fill_value=0.0),
+                  BoundsPolicy(action=<WARN>, mode=<FILL>, fill_value=0.0)
+              )
+          )
+      )
