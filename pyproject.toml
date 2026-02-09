@@ -26,11 +26,12 @@ axsdb = "axsdb.cli:main"
 
 [dependency-groups]
 test = [
-  "pytest",
-  "pytest-datadir",
-  "pytest-cov",
   "coverage>=7.10.0",
+  "pytest",
+  "pytest-cov",
+  "pytest-datadir",
   "pytest-doctestplus",
+  "rich",
 ]
 docs = [
   "autodocsumm>=0.2.14",

@@ -177,6 +177,11 @@ def _convert_bounds(value) -> tuple[BoundsPolicy, BoundsPolicy]:
                 BoundsPolicy(fill_value=float(value[0])),
                 BoundsPolicy(fill_value=float(value[1])),
             )
+        # Tuple of 2 convertible values (e.g., strings, dicts)
+        return (
+            BoundsPolicy.convert(value[0]),
+            BoundsPolicy.convert(value[1]),
+        )
 
     # Dict with "lower" and/or "upper" keys
     if isinstance(value, Mapping):
@@ -237,6 +242,12 @@ class ErrorHandlingPolicy:
         Returns
         -------
         ErrorHandlingPolicy
+
+        Raises
+        ------
+        ValueError
+            If the value cannot be converted to an :class:`.ErrorHandlingPolicy`
+            instance.
         """
 
         if isinstance(value, cls):
@@ -257,7 +268,9 @@ class ErrorHandlingPolicy:
 
             return cls(**kwargs)
         else:
-            return value
+            raise ValueError(
+                f"cannot convert value to ErrorHandlingPolicy (got {value!r})"
+            )
 
 
 @attrs.define

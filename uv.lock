@@ -189,6 +189,7 @@ dev = [
     { name = "pytest-datadir" },
     { name = "pytest-doctestplus", version = "1.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pytest-doctestplus", version = "1.7.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "rich" },
     { name = "shibuya" },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
@@ -225,6 +226,7 @@ pycharm = [
     { name = "pytest-datadir" },
     { name = "pytest-doctestplus", version = "1.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pytest-doctestplus", version = "1.7.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "rich" },
     { name = "setuptools" },
     { name = "shibuya" },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -244,6 +246,7 @@ test = [
     { name = "pytest-datadir" },
     { name = "pytest-doctestplus", version = "1.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "pytest-doctestplus", version = "1.7.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "rich" },
 ]
 
 [package.metadata]
@@ -269,6 +272,7 @@ dev = [
     { name = "pytest-cov" },
     { name = "pytest-datadir" },
     { name = "pytest-doctestplus" },
+    { name = "rich" },
     { name = "shibuya" },
     { name = "sphinx" },
     { name = "sphinx-autobuild", specifier = ">=2021" },
@@ -298,6 +302,7 @@ pycharm = [
     { name = "pytest-cov" },
     { name = "pytest-datadir" },
     { name = "pytest-doctestplus" },
+    { name = "rich" },
     { name = "setuptools" },
     { name = "shibuya" },
     { name = "sphinx" },
@@ -313,6 +318,7 @@ test = [
     { name = "pytest-cov" },
     { name = "pytest-datadir" },
     { name = "pytest-doctestplus" },
+    { name = "rich" },
 ]
 
 [[package]]
