@@ -20,6 +20,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
     # Third-party
+    "myst_parser",
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_iconify",
@@ -37,6 +38,18 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/docs/", None),
     "cachetools": ("https://cachetools.readthedocs.io/en/stable/", None),
     "pint": ("https://pint.readthedocs.io/en/stable/", None),
+}
+
+# -- GitHub quicklinks with 'extlinks' -----------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/extlinks.html
+
+ghbase = "https://github.com"
+ghroot = f"{ghbase}/eradiate/axsdb"
+extlinks = {
+    "ghissue": (f"{ghroot}/issues/%s", "GH%s"),
+    "ghpr": (f"{ghroot}/pull/%s", "PR%s"),
+    "ghcommit": (f"{ghroot}/commit/%s", "%.7s"),
+    "ghuser": (f"{ghbase}/%s", "@%s"),
 }
 
 autodoc_default_options = {

@@ -35,6 +35,7 @@ test = [
 ]
 docs = [
   "autodocsumm>=0.2.14",
+  "myst-parser",
   "shibuya",
   "sphinx",
   "sphinx-autobuild>=2021",
