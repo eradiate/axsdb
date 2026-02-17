@@ -7,7 +7,7 @@ from axsdb import (
     ErrorHandlingConfiguration,
     MonoAbsorptionDatabase,
 )
-from axsdb.error import InterpolationError
+from axsdb.error import ErrorHandlingAction, InterpolationError
 from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import get_unit_registry
 
@@ -38,11 +38,13 @@ class TestMonoAbsorptionDatabase:
         db = MonoAbsorptionDatabase.from_dict(
             {
                 "construct": "from_directory",
-                "dir_path": shared_datadir / "nanockd_v1",
+                "dir_path": shared_datadir / "nanomono_v1",
                 "lazy": False,
+                "error_handling_config": {"t": {"missing": "warn"}},
             }
         )
         assert db.lazy is False
+        assert db.error_handling_config.t.missing is ErrorHandlingAction.WARN
 
     @pytest.mark.parametrize(
         "w",
