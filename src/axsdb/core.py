@@ -70,7 +70,7 @@ class AbsorptionDatabase:
     cache : cachetools.LRUCache, optional
         A mapping that implements an LRU caching policy.
 
-    error_handling_config : ErrorHandlingConfiguration, optional
+    error_handling_config : ErrorHandlingConfiguration or dict, optional
         Default error handling policy. If unset, a global default is used.
 
     Notes
@@ -154,7 +154,8 @@ class AbsorptionDatabase:
 
     #: Default error handling policy. If unset, the global default is used.
     _error_handling_config: ErrorHandlingConfiguration | None = attrs.field(
-        default=None
+        default=None,
+        converter=attrs.converters.optional(ErrorHandlingConfiguration.convert),
     )
 
     @property
@@ -281,7 +282,11 @@ class AbsorptionDatabase:
 
     @classmethod
     def from_directory(
-        cls, dir_path: PathLike, lazy: bool = False, fix: bool = True
+        cls,
+        dir_path: PathLike,
+        lazy: bool = False,
+        fix: bool = True,
+        error_handling_config: ErrorHandlingConfiguration | None = None,
     ) -> AbsorptionDatabase:
         """
         Initialize a CKD database from a directory that contains one or several
@@ -376,7 +381,14 @@ class AbsorptionDatabase:
             to_csv=lambda df, filename: df.to_csv(filename),
         )
 
-        return cls(dir_path, index, spectral_coverage, metadata=metadata, lazy=lazy)
+        return cls(
+            dir_path,
+            index,
+            spectral_coverage,
+            metadata=metadata,
+            lazy=lazy,
+            error_handling_config=error_handling_config,
+        )
 
     @classmethod
     def from_dict(cls, value: dict) -> AbsorptionDatabase:
