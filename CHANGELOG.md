@@ -1,6 +1,6 @@
 # Release notes
 
-## AxsDB 0.1.1 (*upcoming release*)
+## AxsDB 0.1.1 (2026-02-18)
 
 * Added a converter to the `AbsorptionDatabase._error_handling_config` attribute
   ({ghpr}`12`).
