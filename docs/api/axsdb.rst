@@ -27,6 +27,12 @@ axsdb
     MonoAbsorptionDatabase
     CKDAbsorptionDatabase
 
+.. rubric:: Database factory
+
+.. autosummary::
+
+    AbsorptionDatabaseFactory
+
 .. rubric:: Error handling
 
 .. autosummary::
@@ -47,6 +53,10 @@ Database classes
 .. autoclass:: AbsorptionDatabase
 .. autoclass:: MonoAbsorptionDatabase
 .. autoclass:: CKDAbsorptionDatabase
+
+Database factory
+
+.. autoclass:: AbsorptionDatabaseFactory
 
 Error handling
 --------------

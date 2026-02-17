@@ -25,7 +25,7 @@ def set_unit_registry(ureg: pint.UnitRegistry | None) -> None:
     Parameters
     ----------
     ureg : pint.UnitRegistry or None
-        New default unit registry. Set to ``None`̀` to reset to the default
+        New default unit registry. Set to ``None`` to reset to the default
         (the application registry).
     """
     global _ureg
