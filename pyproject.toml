@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "axsdb"
-version = "0.1.1"
+version = "0.1.2"
 description = "An absorption database reader for the Eradiate radiative transfer model."
 readme = "README.md"
 license = "LGPL-3.0-or-later"
