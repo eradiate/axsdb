@@ -7,8 +7,29 @@ name = "axsdb"
 version = "0.1.1"
 description = "An absorption database reader for the Eradiate radiative transfer model."
 readme = "README.md"
+license = "LGPL-3.0-or-later"
 authors = [{ name = "Vincent Leroy", email = "vincent.leroy@rayference.eu" }]
 requires-python = ">=3.9"
+keywords = [
+  "radiative-transfer",
+  "absorption",
+  "spectroscopy",
+  "atmosphere",
+  "eradiate",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Atmospheric Science",
+  "Topic :: Scientific/Engineering :: Physics",
+]
 dependencies = [
   "attrs",
   "cachetools",
@@ -20,6 +41,12 @@ dependencies = [
   "typer",
   "xarray>=2024.7.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/eradiate/axsdb"
+Documentation = "https://axsdb.readthedocs.io"
+Repository = "https://github.com/eradiate/axsdb"
+Changelog = "https://github.com/eradiate/axsdb/blob/main/CHANGELOG.md"
 
 [project.scripts]
 axsdb = "axsdb.cli:main"
