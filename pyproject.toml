@@ -27,6 +27,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering :: Atmospheric Science",
   "Topic :: Scientific/Engineering :: Physics",
 ]
@@ -34,8 +35,7 @@ dependencies = [
   "attrs",
   "cachetools",
   "netcdf4",
-  "numba>=0.58,<0.63; sys_platform == 'darwin' and platform_machine == 'x86_64'",
-  "numba>=0.58; sys_platform != 'darwin' or platform_machine != 'x86_64'",
+  "numba>=0.58",
   "pint",
   "scipy",
   "typer",
@@ -87,9 +87,19 @@ directory = "./reports/coverage/html"
 output = "./reports/coverage/coverage.json"
 
 [tool.coverage.paths]
-equivalent = ["src/", "__pypackages__/"]
+# Map CI runner source paths back to the local "src/" directory so that
+# "coverage combine" can merge data collected on different OSes.
+source = [
+  "src/",
+  "/home/runner/work/axsdb/axsdb/src/",
+  "/Users/runner/work/axsdb/axsdb/src/",
+  "D:\\a\\axsdb\\axsdb\\src\\",
+]
 
 [tool.coverage.report]
+# Skip missing source files (e.g. third-party Cython .pyx) when combining
+# coverage data from multiple OSes.
+ignore_errors = true
 omit = [
   "src/*/__init__.py",
   "src/*/cli.py",

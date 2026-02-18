@@ -46,6 +46,7 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
     :hidden:
     :caption: Development
 
+    dev/installation
     dev/benchmarking
     dev/interpolation
     Typing <dev/typing>

@@ -5,26 +5,36 @@ alabaster==0.7.16 ; python_full_version < '3.10'
     # via sphinx
 alabaster==1.0.0 ; python_full_version >= '3.10'
     # via sphinx
-anyio==4.8.0
+annotated-doc==0.0.4
+    # via typer
+anyio==4.12.1
     # via
     #   starlette
     #   watchfiles
-attrs==25.2.0
+attrs==25.4.0
     # via axsdb
 autodocsumm==0.2.14
-babel==2.17.0
+babel==2.18.0
     # via sphinx
-cachetools==5.5.2
+cachetools==6.2.6 ; python_full_version < '3.10'
     # via axsdb
-certifi==2025.1.31
+cachetools==7.0.1 ; python_full_version >= '3.10'
+    # via axsdb
+certifi==2026.1.4
     # via
     #   netcdf4
     #   requests
-cftime==1.6.4.post1
+cftime==1.6.4.post1 ; python_full_version < '3.10'
     # via netcdf4
-charset-normalizer==3.4.1
+cftime==1.6.5 ; python_full_version >= '3.10'
+    # via netcdf4
+charset-normalizer==3.4.4
     # via requests
-click==8.1.8
+click==8.1.8 ; python_full_version < '3.10'
+    # via
+    #   typer
+    #   uvicorn
+click==8.3.1 ; python_full_version >= '3.10'
     # via
     #   typer
     #   uvicorn
@@ -37,13 +47,13 @@ colorama==0.4.6
     #   taskipy
 coverage==7.10.7 ; python_full_version < '3.10'
     # via pytest-cov
-coverage==7.13.3 ; python_full_version >= '3.10'
+coverage==7.13.4 ; python_full_version >= '3.10'
     # via pytest-cov
 docutils==0.21.2
     # via
     #   myst-parser
     #   sphinx
-exceptiongroup==1.2.2 ; python_full_version < '3.11'
+exceptiongroup==1.3.1 ; python_full_version < '3.11'
     # via
     #   anyio
     #   pytest
@@ -51,17 +61,19 @@ flexcache==0.3
     # via pint
 flexparser==0.4
     # via pint
-h11==0.14.0
+h11==0.16.0
     # via uvicorn
-idna==3.10
+idna==3.11
     # via
     #   anyio
     #   requests
 imagesize==1.4.1
     # via sphinx
-importlib-metadata==8.7.0 ; python_full_version < '3.10'
+importlib-metadata==8.7.1 ; python_full_version < '3.10'
     # via sphinx
-iniconfig==2.0.0
+iniconfig==2.1.0 ; python_full_version < '3.10'
+    # via pytest
+iniconfig==2.3.0 ; python_full_version >= '3.10'
     # via pytest
 jinja2==3.1.6
     # via
@@ -69,7 +81,7 @@ jinja2==3.1.6
     #   sphinx
 llvmlite==0.43.0 ; python_full_version < '3.10'
     # via numba
-llvmlite==0.45.1 ; python_full_version >= '3.10'
+llvmlite==0.46.0 ; python_full_version >= '3.10'
     # via numba
 markdown-it-py==3.0.0 ; python_full_version < '3.11'
     # via
@@ -81,7 +93,7 @@ markdown-it-py==4.0.0 ; python_full_version >= '3.11'
     #   mdit-py-plugins
     #   myst-parser
     #   rich
-markupsafe==3.0.2
+markupsafe==3.0.3
     # via jinja2
 mdit-py-plugins==0.4.2 ; python_full_version < '3.10'
     # via myst-parser
@@ -94,13 +106,17 @@ mslex==1.3.0 ; sys_platform == 'win32'
 myst-parser==3.0.1 ; python_full_version < '3.10'
 myst-parser==4.0.1 ; python_full_version == '3.10.*'
 myst-parser==5.0.0 ; python_full_version >= '3.11'
-netcdf4==1.7.2
+netcdf4==1.7.2 ; python_full_version < '3.10'
+    # via axsdb
+netcdf4==1.7.3 ; python_full_version == '3.10.*' and platform_machine == 'ARM64' and sys_platform == 'win32'
+    # via axsdb
+netcdf4==1.7.4 ; (python_full_version >= '3.10' and platform_machine != 'ARM64') or (python_full_version >= '3.11' and platform_machine == 'ARM64' and sys_platform == 'win32') or (python_full_version >= '3.10' and sys_platform != 'win32')
     # via axsdb
 numba==0.60.0 ; python_full_version < '3.10'
     # via axsdb
-numba==0.62.1 ; python_full_version >= '3.10'
+numba==0.63.1 ; python_full_version >= '3.10'
     # via axsdb
-numpy==2.0.2
+numpy==2.0.2 ; python_full_version < '3.10'
     # via
     #   cftime
     #   netcdf4
@@ -108,63 +124,100 @@ numpy==2.0.2
     #   pandas
     #   scipy
     #   xarray
-packaging==24.2
+numpy==2.2.6 ; python_full_version == '3.10.*'
+    # via
+    #   cftime
+    #   netcdf4
+    #   numba
+    #   pandas
+    #   scipy
+    #   xarray
+numpy==2.3.5 ; python_full_version >= '3.11'
+    # via
+    #   cftime
+    #   netcdf4
+    #   numba
+    #   pandas
+    #   scipy
+    #   xarray
+packaging==26.0
     # via
     #   pytest
     #   pytest-doctestplus
     #   sphinx
     #   xarray
-pandas==2.2.3
+pandas==2.3.3 ; python_full_version < '3.11'
     # via xarray
-pint==0.24.4
+pandas==3.0.1 ; python_full_version >= '3.11'
+    # via xarray
+pint==0.24.4 ; python_full_version < '3.11'
     # via axsdb
-platformdirs==4.3.6
+pint==0.25.2 ; python_full_version >= '3.11'
+    # via axsdb
+platformdirs==4.4.0 ; python_full_version < '3.10'
     # via pint
-pluggy==1.5.0
-    # via pytest
+platformdirs==4.9.2 ; python_full_version >= '3.10'
+    # via pint
+pluggy==1.6.0
+    # via
+    #   pytest
+    #   pytest-cov
 psutil==6.1.1
     # via taskipy
 py-cpuinfo==9.0.0
     # via pytest-benchmark
-pygments==2.19.1
+pygments==2.19.2
     # via
+    #   pygments-styles
+    #   pytest
     #   rich
     #   sphinx
-pytest==8.3.5
+pygments-styles==0.3.0
+    # via shibuya
+pytest==8.4.2 ; python_full_version < '3.10'
+    # via
+    #   pytest-benchmark
+    #   pytest-cov
+    #   pytest-datadir
+    #   pytest-doctestplus
+pytest==9.0.2 ; python_full_version >= '3.10'
     # via
     #   pytest-benchmark
     #   pytest-cov
     #   pytest-datadir
     #   pytest-doctestplus
 pytest-benchmark==5.2.3
-pytest-cov==6.0.0
-pytest-datadir==1.6.1
+pytest-cov==7.0.0
+pytest-datadir==1.8.0
 pytest-doctestplus==1.6.0 ; python_full_version < '3.10'
 pytest-doctestplus==1.7.1 ; python_full_version >= '3.10'
 python-dateutil==2.9.0.post0
     # via pandas
-pytz==2025.1
+pytz==2025.2 ; python_full_version < '3.11'
     # via pandas
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via myst-parser
-requests==2.32.3
+requests==2.32.5
     # via sphinx
-rich==13.9.4
+rich==14.3.2
     # via typer
-roman-numerals-py==3.1.0 ; python_full_version >= '3.11'
+roman-numerals==4.1.0 ; python_full_version >= '3.11'
+    # via roman-numerals-py
+roman-numerals-py==4.1.0 ; python_full_version >= '3.11'
     # via sphinx
 scipy==1.13.1 ; python_full_version < '3.10'
     # via axsdb
-scipy==1.15.2 ; python_full_version >= '3.10'
+scipy==1.15.3 ; python_full_version == '3.10.*'
+    # via axsdb
+scipy==1.17.0 ; python_full_version >= '3.11'
     # via axsdb
 shellingham==1.5.4
     # via typer
-shibuya==2025.2.28
+shibuya==2025.10.21 ; python_full_version < '3.10'
+shibuya==2026.1.9 ; python_full_version >= '3.10'
 six==1.17.0
     # via python-dateutil
-sniffio==1.3.1
-    # via anyio
-snowballstemmer==2.2.0
+snowballstemmer==3.0.1
     # via sphinx
 sphinx==7.4.7 ; python_full_version < '3.10'
     # via
@@ -193,10 +246,12 @@ sphinx==8.2.3 ; python_full_version >= '3.11'
     #   sphinx-copybutton
     #   sphinx-design
     #   sphinx-iconify
-sphinx-autobuild==2024.10.3
+sphinx-autobuild==2024.10.3 ; python_full_version < '3.11'
+sphinx-autobuild==2025.8.25 ; python_full_version >= '3.11'
 sphinx-copybutton==0.5.2
-sphinx-design==0.6.1
-sphinx-iconify==0.2.0
+sphinx-design==0.6.1 ; python_full_version < '3.11'
+sphinx-design==0.7.0 ; python_full_version >= '3.11'
+sphinx-iconify==0.3.0
 sphinxcontrib-applehelp==2.0.0
     # via sphinx
 sphinxcontrib-devhelp==2.0.0
@@ -209,42 +264,49 @@ sphinxcontrib-qthelp==2.0.0
     # via sphinx
 sphinxcontrib-serializinghtml==2.0.0
     # via sphinx
-starlette==0.46.1
+starlette==0.49.3 ; python_full_version < '3.10'
+    # via sphinx-autobuild
+starlette==0.52.1 ; python_full_version >= '3.10'
     # via sphinx-autobuild
 taskipy==1.14.1
-tomli==2.2.1 ; python_full_version < '4'
+tomli==2.4.0 ; python_full_version < '4'
     # via
     #   coverage
     #   pytest
     #   sphinx
     #   taskipy
-typer==0.15.2
+typer==0.23.2 ; python_full_version < '3.10'
     # via axsdb
-typing-extensions==4.12.2
+typer==0.24.0 ; python_full_version >= '3.10'
+    # via axsdb
+typing-extensions==4.15.0
     # via
     #   anyio
+    #   exceptiongroup
     #   flexcache
     #   flexparser
     #   pint
-    #   rich
     #   starlette
-    #   typer
     #   uvicorn
-tzdata==2025.1
+tzdata==2025.3 ; python_full_version < '3.11' or sys_platform == 'emscripten' or sys_platform == 'win32'
     # via pandas
-urllib3==2.3.0
+urllib3==2.6.3
     # via requests
-uvicorn==0.34.0
+uvicorn==0.39.0 ; python_full_version < '3.10'
     # via sphinx-autobuild
-watchfiles==1.0.4
+uvicorn==0.41.0 ; python_full_version >= '3.10'
     # via sphinx-autobuild
-websockets==15.0.1
+watchfiles==1.1.1
+    # via sphinx-autobuild
+websockets==15.0.1 ; python_full_version < '3.10'
+    # via sphinx-autobuild
+websockets==16.0 ; python_full_version >= '3.10'
     # via sphinx-autobuild
 xarray==2024.7.0 ; python_full_version < '3.10'
     # via axsdb
-xarray==2024.11.0 ; python_full_version == '3.10.*'
+xarray==2025.6.1 ; python_full_version == '3.10.*'
     # via axsdb
-xarray==2026.1.0 ; python_full_version >= '3.11'
+xarray==2026.2.0 ; python_full_version >= '3.11'
     # via axsdb
 zipp==3.23.0 ; python_full_version < '3.10'
     # via importlib-metadata
