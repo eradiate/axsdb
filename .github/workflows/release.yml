@@ -1,4 +1,6 @@
 name: Publish Python distribution to PyPI
+# Sources:
+# - https://packaging.python.org/en/latest/guides/publishing-package-distribution-releases-using-github-actions-ci-cd-workflows/
 
 on:
   push:
@@ -12,6 +14,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
 
       - name: Get current git tag
         id: tag
@@ -20,7 +24,7 @@ jobs:
           # Remove the leading 'v' from the tag (e.g., 'v1.2.3' -> '1.2.3')
           GIT_VERSION=${TAG#v}
           echo "Current git tag version: $GIT_VERSION"
-          echo "::set-output name=tag::$GIT_VERSION"
+          echo "tag=$GIT_VERSION" >> $GITHUB_OUTPUT
 
       - name: Check if git tag matches version
         run: |
@@ -69,7 +73,7 @@ jobs:
 #
 #    steps:
 #      - name: Download all the dists
-#        uses: actions/download-artifact@v7
+#        uses: actions/download-artifact@v6
 #        with:
 #          name: python-package-distributions
 #          path: dist/
@@ -94,7 +98,7 @@ jobs:
 
     steps:
       - name: Download all the dists
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v6
         with:
           name: python-package-distributions
           path: dist/
