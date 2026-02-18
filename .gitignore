@@ -12,5 +12,8 @@ docs/_build/
 .idea/
 .coverage
 
+# Local constraints
+constraints-local.txt
+
 # Benchmark results
 .benchmarks/

@@ -323,7 +323,7 @@ class AbsorptionDatabase:
             raise NotADirectoryError(dir_path)
 
         try:
-            with open(os.path.join(dir_path, "metadata.json")) as f:
+            with open(os.path.join(dir_path, "metadata.json"), encoding="utf-8") as f:
                 metadata = json.load(f)
         except FileNotFoundError:
             metadata = {}

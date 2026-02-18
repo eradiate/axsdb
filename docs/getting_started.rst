@@ -16,19 +16,13 @@ Install from PyPI in your virtual environment:
     # or, with uv
     uv pip install axsdb
 
-To install from source for development:
-
-.. code:: shell
-
-    git clone https://github.com/eradiate/axsdb.git
-    cd axsdb
-    uv sync --dev --all-extras
-
 Verify your installation:
 
 .. code:: shell
 
     python -c "import axsdb; print(axsdb.__version__)"
+
+To install from source for development, see :doc:`dev/installation`.
 
 Quick start
 -----------
