@@ -9,15 +9,16 @@ regular pytest features.
 Running the benchmarking suite
 ------------------------------
 
-The pytest-benchmark plugin is loaded only when running the benchmarking suite. A local configuration file changes the prefixes used by pytest to
-discover files (``_benchmark``), classes (``Benchmark``) and functions
-(``_benchmark``). Just run
+The pytest-benchmark plugin is loaded only when running the benchmarking suite.
+A local configuration file changes the prefixes used by pytest to
+discover files (``benchmark_``), classes (``Benchmark``) and functions
+(``benchmark_``). Just run
 
 .. code-block:: shell
 
     # with the dedicated taskipy task
     uv run task benchmarks
-    # or directly calling pytest
+    # or directly calling pytest, with the development environment activated
     pytest benchmarks
 
 You can use all pytest features to select tests, increase verbosity, etc.
