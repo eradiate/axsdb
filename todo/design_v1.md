@@ -1,7 +1,8 @@
 # AxsDB v1 — Design Document
 
 > Document generated and edited by Vincent Leroy with Claude Sonnet 4.6.
-> This is work in progress.
+> This is work in progress: there might be mistakes or missing parts.
+> I still need to research REPTRAN to understand it completely.
 
 ## Glossary
 
@@ -105,9 +106,10 @@ index keyed on `(species, source, version, spectral_mode)` and selects the appro
 component per species at evaluation time. A priority/fallback chain per species is
 supported.
 
-Combining contributions evaluated in different spectral modes (*e.g.* adding a
-monochromatic continuum to a g-point value) requires a dedicated **`SpectralMixer`**
-abstraction.
+Combining a non-LBL line-absorption component with a monochromatic LBL continuum
+requires a dedicated **`SpectralMixer`** abstraction. Only pairings of one
+non-LBL mode with LBL are supported; combinations of two non-LBL modes
+(*e.g.* REPTRAN + CKD) are physically meaningless and rejected at construction.
 
 An important near-term use case is **REPTRAN line absorption + MT-CKD continuum**.
 Because both REPTRAN representative wavelengths and the MT-CKD continuum are
@@ -279,6 +281,16 @@ class AbstractComponent(ABC):
     @property
     def coords(self) -> frozenset[str]: ...
 
+    @property
+    def spectral_grid(self) -> xr.Dataset:
+        """
+        Spectral discretization of this component.
+        Same format as ``Database.spectral_grid`` for the corresponding mode.
+        Used by ``Database`` at construction time to verify grid consistency
+        across all primary-mode components.
+        """
+        ...
+
     def lookup(
         self,
         atmo: xr.Dataset,
@@ -414,20 +426,39 @@ class Quadrature:
 
 ```python
 class Database:
-    def __init__(
-        self,
-        components: Sequence[AbstractComponent],
-        mixer: AbstractSpectralMixer | None = None,
-        cache_size: int = 128,
-    ): ...
+    def __init__(self, components: Sequence[AbstractComponent], cache_size: int = 128):
+        """
+        Validates components and infers spectral mode and mixer automatically.
+        Two checks are performed in order:
+
+        **1. Mode combination check** — the allowed mode sets are:
+
+        * Single mode (any) → used as-is; no mixer needed.
+        * ``reptran`` + ``lbl`` → REPTRAN is primary; ``PointwiseMixer`` selected.
+        * ``ckd_discrete`` + ``lbl`` → CKD discrete is primary; ``BandwiseMixer`` selected.
+        * ``ckd_continuous`` + ``lbl`` → CKD continuous is primary; ``BandwiseMixer`` selected.
+
+        Any other combination raises ``ValueError``.
+
+        **2. Spectral grid consistency check** — all primary-mode components must
+        expose the same ``spectral_grid`` (identical dimensions, coordinates, and
+        values). Raises ``ValueError`` if grids differ, e.g. two REPTRAN components
+        at different resolutions, or CKD components with mismatched band definitions.
+        """
+        ...
+
+    @property
+    def spectral_mode(self) -> str:
+        """Inferred spectral mode: 'lbl' | 'reptran' | 'ckd_continuous' | 'ckd_discrete'."""
+        ...
 
     @property
     def spectral_grid(self) -> xr.Dataset:
         """
-        Spectral discretization of the database.
+        Spectral discretization of the database, taken from the shared grid
+        of the primary-mode components (guaranteed identical by construction).
 
-        Returns an ``xr.Dataset`` whose structure depends on the spectral mode
-        of the primary (line-absorption) components:
+        Structure depends on ``spectral_mode``:
 
         * **LBL** — dimension: ``wavenumber`` [cm⁻¹].
         * **REPTRAN** — dimensions: ``band``, ``rep_idx``;
@@ -435,18 +466,11 @@ class Database:
         * **CKD discrete** — dimensions: ``band``, ``g_idx``;
           non-dimension coordinates: ``g`` [1], ``weight`` [1].
         * **CKD continuous** — dimensions: ``band``, ``g`` [1].
-
-        For mixed-backend databases the grid reflects the primary spectral mode
-        (the one that determines output spectral coordinates); secondary
-        components (e.g. LBL continuum) are mapped onto this grid by the
-        ``SpectralMixer`` and do not add extra dimensions.
         """
         ...
 
     def sigma(
-        self,
-        atmo: xr.Dataset,
-        bounds_policy: BoundsPolicy | None = None,
+        self, atmo: xr.Dataset, bounds_policy: BoundsPolicy | None = None
     ) -> xr.DataArray:
         """
         Per-species cross-sections.
@@ -455,9 +479,7 @@ class Database:
         ...
 
     def k_abs(
-        self,
-        atmo: xr.Dataset,
-        bounds_policy: BoundsPolicy | None = None,
+        self, atmo: xr.Dataset, bounds_policy: BoundsPolicy | None = None
     ) -> xr.DataArray:
         """
         Total volumetric absorption coefficient [m⁻¹].
