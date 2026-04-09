@@ -9,7 +9,7 @@ description = "An absorption database reader for the Eradiate radiative transfer
 readme = "README.md"
 license = "LGPL-3.0-or-later"
 authors = [{ name = "Vincent Leroy", email = "vincent.leroy@rayference.eu" }]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 keywords = [
   "radiative-transfer",
   "absorption",
@@ -40,6 +40,7 @@ dependencies = [
   "scipy",
   "typer",
   "xarray>=2024.7.0",
+  "pandera==0.31.0rc1",
 ]
 
 [project.urls]
