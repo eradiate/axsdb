@@ -9,6 +9,7 @@
 * Added cross-platform coverage path mapping for multi-OS coverage aggregation
   ({ghpr}`13`).
 * Added developer installation documentation ({ghpr}`13`).
+* Exposed `units` module as public API ({ghpr}`17`).
 
 ## AxsDB 0.1.1 (2026-02-18)
 
