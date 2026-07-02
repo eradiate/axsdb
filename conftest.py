@@ -10,7 +10,9 @@ import axsdb.interpolation
 
 def pprint(obj):
     """Pretty print using rich without box drawing characters."""
-    console = Console(legacy_windows=True, force_terminal=False, no_color=True)
+    console = Console(
+        legacy_windows=True, force_terminal=False, no_color=True, width=80
+    )
     console.print(Pretty(obj, indent_guides=False))
 
 
