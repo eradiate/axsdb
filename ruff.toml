@@ -1,0 +1,6 @@
+include = ["src/**/*.py", "tests/**/*.py"]
+
+[lint]
+select = ["E", "F", "I", "B", "C4", "SIM", "PIE", "UP", "PERF", "NPY", "RUF"]
+exclude = ["tests/examples/example_*.py", "docs/examples/*.ipynb"]
+allowed-confusables = ["×"]
