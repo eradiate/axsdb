@@ -36,6 +36,7 @@ dependencies = [
   "cachetools",
   "netcdf4",
   "numba>=0.58",
+  "numpy",
   "pint",
   "scipy",
   "typer",
@@ -73,6 +74,7 @@ docs = [
 benchmark = ["pytest-benchmark"]
 dev = [
   "taskipy",
+  "ruff",
   { include-group = "test" },
   { include-group = "docs" },
   { include-group = "benchmark" },
