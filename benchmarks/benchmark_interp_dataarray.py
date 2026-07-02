@@ -7,11 +7,11 @@ z altitude levels.
 """
 
 import numpy as np
-import xarray as xr
 import pytest
-from axsdb.interpolation import interp_dataarray
+import xarray as xr
 from scipy.special import roots_sh_legendre
 
+from axsdb.interpolation import interp_dataarray
 
 Z_LEVELS = [121, 1201, 12001]
 

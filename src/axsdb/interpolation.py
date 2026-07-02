@@ -196,10 +196,7 @@ def _should_use_fast_path(
 
     # All dimensions must have uniform bounds mode
     is_uniform, _ = _check_uniform_bounds(group, bounds_dict)
-    if not is_uniform:
-        return False
-
-    return True
+    return is_uniform
 
 
 def _interp_group_with_interpn(
@@ -459,9 +456,9 @@ def interp_dataarray(
     """
     # Normalize bounds to dict format
     if isinstance(bounds, str):
-        bounds_dict: dict[Hashable, Literal["fill", "clamp", "raise"]] = {
-            dim: bounds for dim in coords
-        }
+        bounds_dict: dict[Hashable, Literal["fill", "clamp", "raise"]] = dict.fromkeys(
+            coords, bounds
+        )
     else:
         bounds_dict = dict(bounds)
         for dim in coords:
@@ -472,9 +469,9 @@ def interp_dataarray(
     if isinstance(fill_value, (int, float)) or (
         isinstance(fill_value, tuple) and len(fill_value) == 2
     ):
-        fill_value_dict: dict[Hashable, float | tuple[float, float]] = {
-            dim: fill_value for dim in coords
-        }
+        fill_value_dict: dict[Hashable, float | tuple[float, float]] = dict.fromkeys(
+            coords, fill_value
+        )
     else:
         fill_value_dict = dict(fill_value)  # type: ignore[arg-type]
         for dim in coords:
@@ -569,7 +566,7 @@ def interp_dataarray(
 
         if use_interpn:
             # Fast path: multi-dimensional interpn
-            is_uniform, uniform_mode = _check_uniform_bounds(group, bounds_dict)
+            _, uniform_mode = _check_uniform_bounds(group, bounds_dict)
             data, dims = _interp_group_with_interpn(
                 data, dims, da, group, uniform_mode, fill_value_dict
             )
@@ -595,7 +592,8 @@ def interp_dataarray(
             if shared_dims:
                 # --- Shared-dimension (pointwise) path ---
                 # This path handles cases where the new coordinates share a dimension
-                # with the existing data (e.g. interpolating t->z when z already exists).
+                # with the existing data (e.g. interpolating t->z when z already
+                # exists).
                 #
                 # Strategy: Precompute indices/weights once for the shared dimension,
                 # then apply them pointwise to each slice. This avoids redundant
@@ -618,7 +616,7 @@ def interp_dataarray(
                 other_axes = [
                     i for i in range(len(dims)) if i != dim_axis and i != shared_axis
                 ]
-                perm = other_axes + [shared_axis, dim_axis]
+                perm = [*other_axes, shared_axis, dim_axis]
                 data = data.transpose(perm)
 
                 # Precompute bin indices and weights once for all shared-dim
@@ -715,7 +713,7 @@ def interp_dataarray(
                     else:
                         old_bc = np.broadcast_to(
                             old_coords_arr,
-                            data.shape[:-1] + (len(old_coords_arr),),
+                            (*data.shape[:-1], len(old_coords_arr)),
                         )
                         new_bc = (
                             new_coords_arr.reshape(1)
@@ -780,10 +778,11 @@ def interp_dataarray(
     # --- Wrap back into a DataArray ---
     # Collect coordinates for the output: keep original coords whose dims
     # are all still present, then add any new coords from interp targets.
-    out_coords: dict = {}
-    for coord_name, coord_val in da.coords.items():
-        if all(d in dims for d in coord_val.dims):
-            out_coords[coord_name] = coord_val
+    out_coords: dict = {
+        coord_name: coord_val
+        for coord_name, coord_val in da.coords.items()
+        if all(d in dims for d in coord_val.dims)
+    }
 
     for spec in interp_specs:
         dim = spec["dim"]

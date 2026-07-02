@@ -14,13 +14,9 @@ import attrs
 class DataError(Exception):
     """Raised when encountering issues with data."""
 
-    pass
-
 
 class InterpolationError(Exception):
     """Raised when encountering errors during interpolation."""
-
-    pass
 
 
 # ------------------------------------------------------------------------------
@@ -190,12 +186,11 @@ def _convert_bounds(value) -> tuple[BoundsPolicy, BoundsPolicy]:
         )
 
     # Dict with "lower" and/or "upper" keys
-    if isinstance(value, Mapping):
-        if "lower" in value or "upper" in value:
-            return (
-                BoundsPolicy.convert(value.get("lower", {})),
-                BoundsPolicy.convert(value.get("upper", {})),
-            )
+    if isinstance(value, Mapping) and ("lower" in value or "upper" in value):
+        return (
+            BoundsPolicy.convert(value.get("lower", {})),
+            BoundsPolicy.convert(value.get("upper", {})),
+        )
 
     # Single value (string, number, dict, BoundsPolicy): symmetric
     policy = BoundsPolicy.convert(value)
@@ -429,7 +424,7 @@ def handle_error(error: InterpolationError, action: ErrorHandlingAction):
         return
 
     if action is ErrorHandlingAction.WARN:
-        warnings.warn(str(error), UserWarning)
+        warnings.warn(str(error), UserWarning, stacklevel=2)
         return
 
     if action is ErrorHandlingAction.RAISE:
@@ -475,9 +470,10 @@ def get_error_handling_config() -> ErrorHandlingConfiguration:
     if _DEFAULT_ERROR_HANDLING_CONFIG is None:  # No config yet: assign a default
         set_error_handling_config(
             {
-                # This default configuration ignores bound errors on pressure and temperature
-                # variables because this usually occurs at high altitude, where the absorption
-                # coefficient is very low and can be safely forced to 0.
+                # This default configuration ignores bound errors on pressure and
+                # temperature variables because this usually occurs at high altitude,
+                # where the absorption coefficient is very low and can be safely forced
+                # to 0.
                 "p": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
                 "t": {"missing": "raise", "scalar": "raise", "bounds": "ignore"},
                 # Ignore missing molecule coordinates, raise on bound error.

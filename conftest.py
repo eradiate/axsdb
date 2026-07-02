@@ -1,10 +1,11 @@
-import pytest
 import numpy
+import pytest
 import xarray
-import axsdb
-import axsdb.interpolation
 from rich.console import Console
 from rich.pretty import Pretty
+
+import axsdb
+import axsdb.interpolation
 
 
 def pprint(obj):

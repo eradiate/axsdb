@@ -7,8 +7,7 @@ from axsdb import (
     ErrorHandlingPolicy,
     get_error_handling_config,
 )
-from axsdb.error import BoundsMode
-from axsdb.error import _convert_bounds
+from axsdb.error import BoundsMode, _convert_bounds
 
 
 class TestBoundsPolicy:

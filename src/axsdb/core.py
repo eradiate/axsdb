@@ -136,7 +136,7 @@ class AbsorptionDatabase:
 
     #: Dataframe that unrolls the spectral information contained in all data
     #: files in the database.
-    _spectral_coverage: pd.DataFrame = (attrs.field(repr=False),)
+    _spectral_coverage: pd.DataFrame = attrs.field(repr=False)
 
     #: Dictionary that contains the database metadata.
     _metadata: dict = attrs.field(factory=dict, repr=False)
@@ -494,10 +494,10 @@ class AbsorptionDatabase:
         path = self._dir_path / fname
 
         if self.lazy:
-            logger.debug("Opening '%s'" % path)
+            logger.debug("Opening '%s'" % path)  # noqa: UP031
             return xr.open_dataset(path)
         else:
-            logger.debug("Loading '%s'" % path)
+            logger.debug("Loading '%s'" % path)  # noqa: UP031
             return xr.load_dataset(path)
 
     def cache_clear(self) -> None:
@@ -669,7 +669,7 @@ class AbsorptionDatabase:
         x_ds_array = x_ds_array - x_missing
 
         # Select on scalar coordinates and missing concentrations
-        result = da.isel(**{x: 0 for x in x_ds_scalar + list(x_missing)})
+        result = da.isel(**dict.fromkeys(x_ds_scalar + list(x_missing), 0))
 
         # Build interpolation parameters
         coords = {"t": thermoprops["t"], "p": thermoprops["p"]}
@@ -700,7 +700,8 @@ class AbsorptionDatabase:
             if np.any(below) and lower_policy.action is not ErrorHandlingAction.IGNORE:
                 handle_error(
                     InterpolationError(
-                        f"Out-of-bounds values detected below lower bound on dimension '{dim}'"
+                        "Out-of-bounds values detected below lower bound on dimension "
+                        f"'{dim}'"
                     ),
                     lower_policy.action,
                 )
@@ -709,7 +710,8 @@ class AbsorptionDatabase:
             if np.any(above) and upper_policy.action is not ErrorHandlingAction.IGNORE:
                 handle_error(
                     InterpolationError(
-                        f"Out-of-bounds values detected above upper bound on dimension '{dim}'"
+                        "Out-of-bounds values detected above upper bound on dimension "
+                        f"'{dim}'"
                     ),
                     upper_policy.action,
                 )

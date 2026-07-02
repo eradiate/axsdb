@@ -11,8 +11,9 @@ library.
 from __future__ import annotations
 
 from typing import Any
-import xarray as xr
+
 import pint
+import xarray as xr
 
 # Internal unit registry. If None, use application registry
 _ureg: pint.UnitRegistry | None = None

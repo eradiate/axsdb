@@ -294,8 +294,8 @@ class TestInterpDataarrayRealWorldScenario:
         temperatures = np.linspace(200, 300, 11)  # 11 temperatures
 
         # Random data with shape (wavelength, angle, temperature)
-        np.random.seed(42)
-        data = np.random.rand(31, 19, 11) * 1e-20
+        rng = np.random.default_rng(42)
+        data = rng.random((31, 19, 11)) * 1e-20
 
         da = xr.DataArray(
             data,
@@ -338,8 +338,8 @@ class TestInterpDataarrayRealWorldScenario:
         wavelengths = np.linspace(400, 700, 31)
         angles = np.linspace(0, 90, 19)
 
-        np.random.seed(42)
-        data = np.random.rand(31, 19)
+        rng = np.random.default_rng(42)
+        data = rng.random((31, 19))
 
         da = xr.DataArray(
             data,
@@ -429,7 +429,7 @@ class TestInterpDataarraySharedDimension:
         p = np.array([1000.0, 500.0, 100.0])
         z = np.array([0.0, 10.0, 20.0])
 
-        data = np.random.rand(3, 3, 3)
+        data = np.random.default_rng().random((3, 3, 3))
         da = xr.DataArray(
             data,
             dims=["t", "p", "z"],
@@ -546,7 +546,7 @@ class TestInterpDataarrayEdgeCases:
             "e": np.linspace(0, 1, 3),
         }
 
-        data = np.random.rand(*shape)
+        data = np.random.default_rng().random(shape)
         da = xr.DataArray(data, dims=dims, coords=coords)
 
         # Interpolate multiple dimensions
@@ -664,7 +664,7 @@ class TestInterpDataarrayFastPath:
         p_grid = np.array([100.0, 500.0, 1000.0])
         x_grid = np.array([10.0, 20.0, 30.0])
 
-        data = np.random.rand(len(t_grid), len(p_grid), len(x_grid))
+        data = np.random.default_rng().random((len(t_grid), len(p_grid), len(x_grid)))
         da = xr.DataArray(
             data,
             dims=["t", "p", "x"],
@@ -696,7 +696,7 @@ class TestInterpDataarrayFastPath:
         p_grid = np.array([100.0, 500.0, 1000.0])
         x_grid = np.array([10.0, 20.0])
 
-        data = np.random.rand(len(t_grid), len(p_grid), len(x_grid))
+        data = np.random.default_rng().random((len(t_grid), len(p_grid), len(x_grid)))
         da = xr.DataArray(
             data,
             dims=["t", "p", "x"],
@@ -733,7 +733,7 @@ class TestInterpDataarrayFastPath:
         p_grid = np.array([100.0, 500.0, 1000.0])
         x_grid = np.array([10.0, 20.0])
 
-        data = np.random.rand(len(t_grid), len(p_grid), len(x_grid))
+        data = np.random.default_rng().random((len(t_grid), len(p_grid), len(x_grid)))
         da = xr.DataArray(
             data,
             dims=["t", "p", "x"],
@@ -770,7 +770,7 @@ class TestInterpDataarrayFastPath:
         t_grid = np.array([200.0, 250.0, 300.0])
         p_grid = np.array([100.0, 500.0, 1000.0])
 
-        data = np.random.rand(len(t_grid), len(p_grid))
+        data = np.random.default_rng().random((len(t_grid), len(p_grid)))
         da = xr.DataArray(
             data,
             dims=["t", "p"],
@@ -842,7 +842,7 @@ class TestInterpDataarrayFastPath:
         t_grid = np.array([200.0, 250.0, 300.0])
         p_grid = np.array([100.0, 500.0, 1000.0])
 
-        data = np.random.rand(len(t_grid), len(p_grid))
+        data = np.random.default_rng().random((len(t_grid), len(p_grid)))
         da = xr.DataArray(
             data,
             dims=["t", "p"],

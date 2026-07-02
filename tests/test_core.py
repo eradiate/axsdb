@@ -11,7 +11,6 @@ from axsdb.error import ErrorHandlingAction, InterpolationError
 from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import get_unit_registry
 
-
 ureg = get_unit_registry()
 
 
@@ -178,7 +177,7 @@ def test_error_handling(absdb, thermoprops_us_standard):
                 w=350.0 * ureg.nm, g=0.5, thermoprops=thermoprops_us_standard
             )
         else:
-            assert False, "unhandled case"
+            raise AssertionError("unhandled case")
 
 
 def _eval(absdb, thermoprops, config):

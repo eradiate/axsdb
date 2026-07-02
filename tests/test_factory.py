@@ -1,6 +1,10 @@
 import pytest
-from axsdb import CKDAbsorptionDatabase, MonoAbsorptionDatabase
-from axsdb import AbsorptionDatabaseFactory
+
+from axsdb import (
+    AbsorptionDatabaseFactory,
+    CKDAbsorptionDatabase,
+    MonoAbsorptionDatabase,
+)
 
 
 def test_factory(shared_datadir):

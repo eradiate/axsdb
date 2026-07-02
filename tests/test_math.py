@@ -46,9 +46,9 @@ class TestInterp1dBasic:
 
     def test_comparison_with_np_interp(self):
         """Test that results match np.interp for in-bounds points."""
-        np.random.seed(42)
-        x = np.sort(np.random.rand(20)) * 10
-        y = np.random.rand(20) * 100
+        rng = np.random.default_rng(42)
+        x = np.sort(rng.random(20)) * 10
+        y = rng.random(20) * 100
         xnew = np.linspace(x[0], x[-1], 50)
 
         result = interp1d(x, y, xnew)
@@ -698,7 +698,8 @@ class TestPrecomputeLerpWorkflow:
         """Test with batched atmospheric profiles (3D use case)."""
         # Dimensions: (wavelength, angle, altitude)
         x = np.array([0.0, 10.0, 20.0, 30.0])  # altitude (km)
-        y = np.random.rand(5, 8, 4)  # (5 wavelengths, 8 angles, 4 altitudes)
+        # (5 wavelengths, 8 angles, 4 altitudes)
+        y = np.random.default_rng().random((5, 8, 4))
         xnew = np.array([5.0, 15.0, 25.0])  # target altitudes
 
         # Precompute

@@ -13,7 +13,6 @@ from typing import Literal
 import numpy as np
 from numba import guvectorize
 
-
 # Bounds mode constants (used internally by gufunc)
 _BOUNDS_FILL = 0
 _BOUNDS_CLAMP = 1
@@ -33,8 +32,8 @@ def _make_interp1d_gufunc():  # pragma: no cover
 
     @guvectorize(
         [
-            "void(float32[:], float32[:], float32[:], int64, float32, float32, float32[:])",
-            "void(float64[:], float64[:], float64[:], int64, float64, float64, float64[:])",
+            "void(float32[:], float32[:], float32[:], int64, float32, float32, float32[:])",  # noqa: E501
+            "void(float64[:], float64[:], float64[:], int64, float64, float64, float64[:])",  # noqa: E501
         ],
         "(n),(n),(m),(),(),()->(m)",
         nopython=True,
@@ -441,8 +440,10 @@ def lerp_indices(
 
     if bounds == "clamp":
         # For clamping, we need special handling for boundary points:
-        # - Points below x[0]: index=0, weight=0  -> y[0] + 0*(y[1]-y[0]) = y[0]
-        # - Points above x[-1]: index=n-2, weight=1 -> y[n-2] + 1*(y[n-1]-y[n-2]) = y[n-1]
+        # - Points below x[0]:
+        #   index=0, weight=0  -> y[0] + 0*(y[1]-y[0]) = y[0]
+        # - Points above x[-1]:
+        #   index=n-2, weight=1 -> y[n-2] + 1*(y[n-1]-y[n-2]) = y[n-1]
         # We use <= and >= (not < and >) to avoid numerical issues with exact
         # boundary matches where floating-point arithmetic might produce tiny
         # non-zero weights.

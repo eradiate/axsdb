@@ -1,9 +1,10 @@
 from __future__ import annotations
+
+from collections.abc import Callable
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 import attrs
-from collections.abc import Callable
-from typing import Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from axsdb import AbsorptionDatabase
@@ -131,8 +132,8 @@ class AbsorptionDatabaseFactory:
         """
         try:
             entry = self._registry[name]
-        except KeyError:
-            raise ValueError(f"no database registered under the name '{name}'")
+        except KeyError as e:
+            raise ValueError(f"no database registered under the name '{name}'") from e
 
         cls = entry.cls
         path = entry.path()

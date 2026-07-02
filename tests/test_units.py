@@ -1,7 +1,8 @@
-import pytest
 import numpy as np
 import pint
+import pytest
 import xarray as xr
+
 from axsdb import units
 
 
