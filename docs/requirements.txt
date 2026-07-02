@@ -177,6 +177,7 @@ pygments==2.19.2
     #   sphinx
 pygments-styles==0.3.0
     # via shibuya
+pyinstrument==5.1.2
 pytest==8.4.2 ; python_full_version < '3.10'
     # via
     #   pytest-benchmark

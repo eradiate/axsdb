@@ -71,7 +71,7 @@ docs = [
   "sphinx-design",
   "sphinx-iconify",
 ]
-benchmark = ["pytest-benchmark"]
+benchmark = ["pytest-benchmark", "pyinstrument"]
 dev = [
   "taskipy",
   "ruff",
@@ -121,7 +121,7 @@ source = ["src/"]
 testpaths = ["tests", "src", "docs"]
 norecursedirs = [".git", ".env", "dist", "__pypackages__"]
 python_files = ["test_*.py", "*_test.py", "tests.py"]
-addopts = "--doctest-plus --doctest-glob='*.rst'"
+addopts = "-ra -vv --doctest-plus --doctest-glob='*.rst'"
 doctest_plus = "enabled"
 doctest_optionflags = "NORMALIZE_WHITESPACE ELLIPSIS"
 
@@ -134,3 +134,4 @@ test = { cmd = "pytest", cwd = "." }
 test-cov = { cmd = "pytest --cov=src", cwd = "." }
 test-cov-report = { cmd = "pytest --cov=src --cov-report=html", cwd = "." }
 benchmark = { cmd = "pytest benchmarks", cwd = "." }
+profile = { cmd = "pyinstrument -r html -o reports/profile.html", cwd = "." }
