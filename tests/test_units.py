@@ -35,7 +35,6 @@ def test_xarray_to_quantity():
         units.xarray_to_quantity(da)
 
     da.attrs.update({"units": "m"})
-    ureg = units.get_unit_registry()
     np.testing.assert_array_equal(
-        units.xarray_to_quantity(da), [1.0, 1.0, 1.0] * ureg.m
+        units.xarray_to_quantity(da).m_as("m"), [1.0, 1.0, 1.0]
     )
