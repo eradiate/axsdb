@@ -10,6 +10,7 @@ library.
 
 from __future__ import annotations
 
+from functools import cache
 from typing import Any
 
 import pint
@@ -31,6 +32,47 @@ def set_unit_registry(ureg: pint.UnitRegistry | None) -> None:
     """
     global _ureg
     _ureg = ureg
+    _parse_units_cached.cache_clear()
+
+
+@cache
+def _parse_units_cached(unit_str: str) -> pint.Quantity:
+    return get_unit_registry()(unit_str)
+
+
+def parse_units(value: str | pint.Quantity) -> pint.Quantity:
+    """
+    Parse a unit string into a unit-only :class:`pint.Quantity` (magnitude
+    1), caching the result. This matches what ``get_unit_registry()(unit_str)``
+    returns, but avoids re-parsing the same string repeatedly.
+
+    Pint's unit-string parsing (tokenizing, name/symbol lookup) is
+    comparatively expensive, so repeatedly parsing the same string (e.g. a
+    NetCDF variable's ``units`` attribute, read on every call in a hot loop)
+    is wasteful. This caches the result globally, keyed on the string.
+
+    .. warning::
+        This cache is only invalidated by :func:`set_unit_registry`. If you
+        swap the active registry via Pint's own
+        :func:`pint.set_application_registry` instead of
+        :func:`set_unit_registry`, this cache keeps returning quantities
+        bound to the previous registry. Always call :func:`set_unit_registry`
+        when changing the registry used with this package.
+
+    Parameters
+    ----------
+    value : str or pint.Quantity
+        Unit string to parse, or an already-parsed unit quantity (returned
+        unchanged).
+
+    Returns
+    -------
+    pint.Quantity
+        The parsed unit quantity.
+    """
+    if isinstance(value, pint.Quantity):
+        return value
+    return _parse_units_cached(value)
 
 
 def get_unit_registry() -> pint.UnitRegistry:
