@@ -77,7 +77,7 @@ def setup(request):
     }
 
 
-class BenchmarkInterpDataArrayThermophysical:
+class BenchInterpDataArrayThermophysical:
     def time_custom(self, da, dims_coords):
         coords_dict = {}
         for dim, coords in dims_coords:
@@ -89,7 +89,7 @@ class BenchmarkInterpDataArrayThermophysical:
 
         interp_dataarray(da, coords_dict, bounds="clamp")
 
-    def benchmark_time_custom(self, setup, benchmark):
+    def bench_time_custom(self, setup, benchmark):
         benchmark(self.time_custom, setup["da"], setup["dims_coords"])
 
     def time_xarray_sequential(self, da, dims_coords, interp_kwargs):
@@ -98,7 +98,7 @@ class BenchmarkInterpDataArrayThermophysical:
             if dim in result.dims:
                 result = result.interp({dim: coords}, **interp_kwargs)
 
-    def benchmark_time_xarray_sequential(self, setup, benchmark):
+    def bench_time_xarray_sequential(self, setup, benchmark):
         benchmark(
             self.time_xarray_sequential,
             setup["da"],
@@ -109,7 +109,7 @@ class BenchmarkInterpDataArrayThermophysical:
     def time_xarray_multi(self, da, dims_coords, interp_kwargs):
         da.interp(dict(dims_coords), **interp_kwargs)
 
-    def benchmark_time_xarray_multi(self, setup, benchmark):
+    def bench_time_xarray_multi(self, setup, benchmark):
         benchmark(
             self.time_xarray_multi,
             setup["da"],

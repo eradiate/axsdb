@@ -73,13 +73,13 @@ def setup_ckd(
     }
 
 
-class BenchmarkEval:
+class BenchEval:
     def eval_ckd(self, wg, absdb, thermoprops, error_handler_config):
         return absdb.eval_sigma_a_ckd(
             *wg, thermoprops=thermoprops, error_handling_config=error_handler_config
         )
 
-    def benchmark_eval(self, setup_ckd, benchmark):
+    def bench_eval(self, setup_ckd, benchmark):
         wg = setup_ckd["wg"]
         absdb = setup_ckd["absdb"]
         thermoprops = setup_ckd["thermoprops"]

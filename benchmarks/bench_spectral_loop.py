@@ -18,15 +18,16 @@ thermoprops_us_standard = xr.load_dataset(
 )
 
 
-class BenchmarkSpectralLoop:
+class BenchSpectralLoop:
     def main(self):
         for w in ws:
             for g in gs:
                 db.eval_sigma_a_ckd(w, g, thermoprops=thermoprops_us_standard)
 
-    def benchmark_main(self, benchmark):
+    def bench_spectral_loop(self, benchmark):
         benchmark(self.main)
 
 
 if __name__ == "__main__":
-    BenchmarkSpectralLoop().main()
+    # Use this for profiling
+    BenchSpectralLoop().main()
