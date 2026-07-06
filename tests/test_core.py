@@ -123,23 +123,62 @@ class TestCKDAbsorptionDatabase:
         z = thermoprops_us_standard.z.values
         assert sigma_a.values.shape == (wg[0].size, z.size)
 
+        # Regression test: the result must carry a "w" coordinate labeling
+        # the matched grid wavelength, like the pre-refactor
+        # .sel(method="nearest")-based implementation did.
+        assert "w" in sigma_a.coords
+        np.testing.assert_allclose(sigma_a.coords["w"].values, [349.9286])
+
+    def test_interp_thermophysical_raw_matches(
+        self,
+        absdb_ckd,
+        thermoprops_us_standard,
+        absorption_database_error_handler_config,
+    ):
+        # _interp_thermophysical_raw (numpy in/out) must produce the exact
+        # same result as _interp_thermophysical (DataArray in/out) for the
+        # same inputs.
+        error_handling_config = ErrorHandlingConfiguration.convert(
+            absorption_database_error_handler_config
+        )
+        ds = absdb_ckd.load_dataset("nanockd_v1-345_355.nc")
+        da = ds["sigma_a"].sel(w=350.0, method="nearest")
+
+        expected, expected_x_ds = absdb_ckd._interp_thermophysical(
+            ds, da, thermoprops_us_standard, error_handling_config
+        )
+
+        data, dims, out_coords, x_ds = absdb_ckd._interp_thermophysical_raw(
+            ds,
+            da.values,
+            list(da.dims),
+            da.coords,
+            thermoprops_us_standard,
+            error_handling_config,
+        )
+
+        assert x_ds == expected_x_ds
+        assert dims == list(expected.dims)
+        np.testing.assert_array_equal(data, expected.values)
+        assert set(out_coords) == set(expected.coords)
+
 
 def test_cache_clear(absdb_ckd):
     # Make a query to ensure that the cache is filling up
     absdb_ckd.load_dataset("nanockd_v1-345_355.nc")
-    assert absdb_ckd._cache.currsize > 0
+    assert absdb_ckd._fname_dataset_cache.currsize > 0
     # Clear the cache: it should be empty after that
     absdb_ckd.cache_clear()
-    assert absdb_ckd._cache.currsize == 0
+    assert absdb_ckd._fname_dataset_cache.currsize == 0
 
 
 def test_cache_reset(absdb_ckd):
     absdb_ckd.cache_reset(2)
-    assert absdb_ckd._cache.currsize == 0
-    assert absdb_ckd._cache.maxsize == 2
+    assert absdb_ckd._fname_dataset_cache.currsize == 0
+    assert absdb_ckd._fname_dataset_cache.maxsize == 2
     absdb_ckd.cache_reset(8)
-    assert absdb_ckd._cache.currsize == 0
-    assert absdb_ckd._cache.maxsize == 8
+    assert absdb_ckd._fname_dataset_cache.currsize == 0
+    assert absdb_ckd._fname_dataset_cache.maxsize == 8
 
 
 @pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
@@ -235,3 +274,46 @@ def test_bounds_policies(absdb, thermoprops_us_standard):
     result_ignore = _eval(absdb, thermoprops_us_standard, config_ignore)
 
     np.testing.assert_array_equal(result_ignore.values, result_warn.values)
+
+
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_bounds_clamp_mode(absdb, thermoprops_us_standard):
+    """
+    Regression test: a bounds policy configured with mode="clamp" must
+    actually clamp out-of-bounds queries to the grid bounds, rather than
+    silently behaving like "fill" (or crashing). ``BoundsPolicy.mode`` is
+    stored as a ``BoundsMode`` enum internally, which must be converted to
+    its string value before reaching the interpolation layer.
+    """
+    fill_sentinel = -12345.0
+    config_clamp = {
+        "p": {"missing": "raise", "scalar": "raise", "bounds": {"mode": "clamp"}},
+        "t": {"missing": "raise", "scalar": "raise", "bounds": {"mode": "clamp"}},
+        "x": {"missing": "ignore", "scalar": "ignore", "bounds": {"mode": "clamp"}},
+    }
+    config_fill = {
+        "p": {
+            "missing": "raise",
+            "scalar": "raise",
+            "bounds": {"mode": "fill", "fill_value": fill_sentinel},
+        },
+        "t": {
+            "missing": "raise",
+            "scalar": "raise",
+            "bounds": {"mode": "fill", "fill_value": fill_sentinel},
+        },
+        "x": {
+            "missing": "ignore",
+            "scalar": "ignore",
+            "bounds": {"mode": "fill", "fill_value": fill_sentinel},
+        },
+    }
+
+    result_clamp = _eval(absdb, thermoprops_us_standard, config_clamp)
+    result_fill = _eval(absdb, thermoprops_us_standard, config_fill)
+
+    # Sanity check: this profile does have out-of-bounds altitudes against
+    # the tiny test databases, otherwise this test would vacuously pass.
+    assert np.any(result_fill.values == fill_sentinel)
+    # Clamping must never leak the raw fill sentinel.
+    assert not np.any(result_clamp.values == fill_sentinel)

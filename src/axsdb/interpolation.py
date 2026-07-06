@@ -9,7 +9,7 @@ https://github.com/pydata/xarray/issues/10683).
 
 from __future__ import annotations
 
-from collections.abc import Hashable
+from collections.abc import Hashable, Mapping
 from typing import Literal
 
 import numpy as np
@@ -202,7 +202,7 @@ def _should_use_fast_path(
 def _interp_group_with_interpn(
     data: np.ndarray,
     dims: list[Hashable],
-    da: xr.DataArray,
+    old_coords: Mapping[Hashable, xr.DataArray],
     group: list[dict],
     bounds_mode: Literal["fill", "clamp", "raise"],
     fill_value_dict: dict[Hashable, float | tuple[float, float]],
@@ -220,8 +220,8 @@ def _interp_group_with_interpn(
         Current data array.
     dims : list
         Current dimension names corresponding to data axes.
-    da : xr.DataArray
-        Original DataArray (for coordinate grids).
+    old_coords : Mapping
+        Original DataArray's coordinates (for coordinate grids).
     group : list of dict
         Group of specs to interpolate together.
     bounds_mode : {"fill", "clamp", "raise"}
@@ -241,7 +241,7 @@ def _interp_group_with_interpn(
     dest_dims = group[0]["new_dims"]  # All specs in group share destination dims
 
     # Build grid points tuple for interpn (order matters!)
-    grid_points = tuple(da.coords[dim].values for dim in src_dims)
+    grid_points = tuple(old_coords[dim].values for dim in src_dims)
 
     # Build query points array: shape (dest_size, n_src_dims)
     query_arrays = [spec["arr"] for spec in group]
@@ -454,6 +454,34 @@ def interp_dataarray(
     ...     fill_value={"wavelength": 0.0, "angle": (-1.0, 1.0)},
     ... )
     """
+    data, dims, out_coords = _interp_core(
+        da.values, list(da.dims), da.coords, coords, bounds, fill_value
+    )
+    return xr.DataArray(
+        data, dims=dims, coords=out_coords, name=da.name, attrs=da.attrs
+    )
+
+
+def _interp_core(
+    data: np.ndarray,
+    dims: list[Hashable],
+    old_coords: Mapping[Hashable, xr.DataArray],
+    coords: dict[Hashable, float | np.ndarray | xr.DataArray],
+    bounds: Literal["fill", "clamp", "raise"]
+    | dict[Hashable, Literal["fill", "clamp", "raise"]] = "fill",
+    fill_value: float
+    | tuple[float, float]
+    | dict[Hashable, float | tuple[float, float]] = np.nan,
+) -> tuple[np.ndarray, list[Hashable], dict]:
+    """
+    Raw-numpy core of :func:`interp_dataarray`. Does the actual interpolation
+    work on plain numpy arrays, without constructing an intermediate
+    ``xr.DataArray``, so callers that need to chain several interpolation
+    steps can defer DataArray construction to the very end. See
+    :func:`interp_dataarray` for parameter semantics; ``old_coords`` is
+    ``da.coords`` (or any equivalent read-only mapping from dim name to
+    coordinate variable).
+    """
     # Normalize bounds to dict format
     if isinstance(bounds, str):
         bounds_dict: dict[Hashable, Literal["fill", "clamp", "raise"]] = dict.fromkeys(
@@ -473,7 +501,7 @@ def interp_dataarray(
             coords, fill_value
         )
     else:
-        fill_value_dict = dict(fill_value)  # type: ignore[arg-type]
+        fill_value_dict = dict(fill_value)
         for dim in coords:
             if dim not in fill_value_dict:
                 fill_value_dict[dim] = np.nan
@@ -483,10 +511,10 @@ def interp_dataarray(
     # array and record the metadata needed for the final DataArray wrap.
     interp_specs: list[dict] = []
     for dim, new_coords in coords.items():
-        if dim not in da.dims:
+        if dim not in dims:
             raise ValueError(
                 f"Dimension {dim!r} not found in DataArray. "
-                f"Available dimensions: {list(da.dims)}"
+                f"Available dimensions: {list(dims)}"
             )
         if isinstance(new_coords, xr.DataArray):
             spec = {
@@ -532,7 +560,7 @@ def interp_dataarray(
     # share the new dimension and reduce the array; processing larger grids
     # first means fewer lerp operations overall.
     def _interp_sort_key(spec: dict) -> tuple:
-        grid_size = da.sizes[spec["dim"]]
+        grid_size = data.shape[dims.index(spec["dim"])]
         query_size = len(spec["arr"])
         # (0, ...) = shrink/same -> first; (1, ...) = expand -> last
         # Within each group, larger grid_size first (hence negative)
@@ -552,9 +580,6 @@ def interp_dataarray(
     # --- Main interpolation loop on raw numpy arrays ---
     # `dims` tracks the current logical dimension order.
     # `data` is the raw ndarray; axes correspond 1-to-1 with `dims`.
-    dims: list[Hashable] = list(da.dims)
-    data: np.ndarray = da.values
-
     for group in interp_groups:
         # Check if this group can use the fast interpn path:
         # - Multiple specs in the group
@@ -568,7 +593,7 @@ def interp_dataarray(
             # Fast path: multi-dimensional interpn
             _, uniform_mode = _check_uniform_bounds(group, bounds_dict)
             data, dims = _interp_group_with_interpn(
-                data, dims, da, group, uniform_mode, fill_value_dict
+                data, dims, old_coords, group, uniform_mode, fill_value_dict
             )
             continue
 
@@ -583,7 +608,7 @@ def interp_dataarray(
             dim_fill_value = fill_value_dict.get(dim, np.nan)
 
             dim_axis = dims.index(dim)
-            old_coords_arr = da.coords[dim].values
+            old_coords_arr = old_coords[dim].values
 
             # Detect shared-dimension case: new_coords has a dim that already
             # exists in the current working set.
@@ -775,12 +800,12 @@ def interp_dataarray(
                         data = data.transpose(perm)
                     # dims unchanged (same names, same order)
 
-    # --- Wrap back into a DataArray ---
-    # Collect coordinates for the output: keep original coords whose dims
-    # are all still present, then add any new coords from interp targets.
+    # --- Assemble output coordinates ---
+    # Keep original coords whose dims are all still present, then add any
+    # new coords from interp targets.
     out_coords: dict = {
         coord_name: coord_val
-        for coord_name, coord_val in da.coords.items()
+        for coord_name, coord_val in old_coords.items()
         if all(d in dims for d in coord_val.dims)
     }
 
@@ -795,6 +820,4 @@ def interp_dataarray(
             # Plain array: attach as a coordinate on its own dim
             out_coords[dim] = (dim, spec["arr"])
 
-    return xr.DataArray(
-        data, dims=dims, coords=out_coords, name=da.name, attrs=da.attrs
-    )
+    return data, dims, out_coords

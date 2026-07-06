@@ -7,9 +7,9 @@ import logging
 import os
 import re
 import textwrap
-from collections.abc import Callable, Hashable
+from collections.abc import Callable, Hashable, Mapping
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
 import attrs
 import numpy as np
@@ -22,15 +22,44 @@ from .error import (
     DataError,
     ErrorHandlingAction,
     ErrorHandlingConfiguration,
+    ErrorHandlingPolicy,
     InterpolationError,
     get_error_handling_config,
     handle_error,
 )
-from .interpolation import interp_dataarray
+from .interpolation import _interp_core, interp_dataarray
+from .math import lerp_indices
 from .typing import PathLike
-from .units import ensure_units, get_unit_registry, xarray_to_quantity
+from .units import ensure_units, get_unit_registry, parse_units, xarray_to_quantity
+from .util import ClosingLRUCache
 
 logger = logging.getLogger("axsdb")
+
+
+class _ThermophysicalPlan(NamedTuple):
+    """
+    Interpolation plan returned by :meth:`AbsorptionDatabase._thermophysical_plan`,
+    invariant across calls sharing the same file, species and error handling
+    policy (see that method for details).
+
+    Used to avoid recomputing the thermophysical part of the interpolation state
+    vector when iterating over the spectral dimension.
+    """
+
+    #: Species concentration coordinates present in the dataset.
+    x_ds: list[Hashable]
+    #: Subset of ``x_ds`` that is scalar (size 1) in the dataset.
+    x_ds_scalar: list[Hashable]
+    #: Subset of ``x_ds`` that is array-valued and present in the profile.
+    x_ds_array: set[Hashable]
+    #: Subset of ``x_ds`` that is array-valued but missing from the profile.
+    x_missing: set[Hashable]
+    #: (dimension, policy) pairs to bounds-check.
+    bounds_checks: list[tuple[Hashable, ErrorHandlingPolicy]]
+    #: Interpolation bounds mode ("fill"/"clamp"/"raise") per dimension.
+    bounds: dict[Hashable, str]
+    #: (lower, upper) fill values per dimension.
+    fill_value: dict[Hashable, tuple[float, float]]
 
 
 @attrs.define(slots=False, repr=False, eq=False)
@@ -149,8 +178,32 @@ class AbsorptionDatabase:
     #: Access mode switch: if ``True``, load data lazily; else, load data eagerly.
     lazy: bool = attrs.field(default=False, repr=False)
 
-    #: A mapping that implements an LRU caching policy.
-    _cache: LRUCache = attrs.field(factory=lambda: LRUCache(8), repr=False)
+    #: Cache mapping a filename (as str) to the corresponding xarray Dataset.
+    #: Used to avoid repeatedly opening a file when requesting data from it
+    #: several times in a row. Evicted datasets are closed (see
+    #: :class:`.util.ClosingLRUCache`), so this is the sole owner of open
+    #: lazy file handles.
+    _fname_dataset_cache: LRUCache = attrs.field(
+        factory=lambda: ClosingLRUCache(16), repr=False, init=False
+    )
+
+    #: Cache mapping a resolved dataset file (by ``ds.encoding["source"]``),
+    #: the species available in a thermophysical profile and an error
+    #: handling configuration to the invariant part of the interpolation
+    #: plan computed in :meth:`_interp_thermophysical`.
+    _thermophysical_plan_cache: LRUCache = attrs.field(
+        factory=lambda: LRUCache(16), repr=False, init=False
+    )
+
+    #: Cache mapping a spectral coordinate value to the filename of the
+    #: dataset it resolves to, used to avoid repeated file lookups for calls
+    #: that share the same spectral coordinate (e.g. sweeping CKD g-points
+    #: at a fixed wavelength). Stores filenames rather than the ``Dataset``
+    #: objects themselves so that :attr:`_fname_dataset_cache` remains the
+    #: sole owner of open datasets.
+    _wl_fname_cache: LRUCache = attrs.field(
+        factory=lambda: LRUCache(16), repr=False, init=False
+    )
 
     #: Default error handling policy. If unset, the global default is used.
     _error_handling_config: ErrorHandlingConfiguration | None = attrs.field(
@@ -305,6 +358,9 @@ class AbsorptionDatabase:
             If ``True``, attempt generating missing index files upon
             initialization. Otherwise, raise if they are missing.
 
+        error_handling_config : .ErrorHandlingConfiguration or None, optional
+            Default error handling policy. If unset, a global default is used.
+
         Returns
         -------
         AbsorptionDatabase
@@ -407,7 +463,6 @@ class AbsorptionDatabase:
         -------
         AbsorptionDatabase
         """
-
         raise NotImplementedError
 
     @staticmethod
@@ -470,7 +525,7 @@ class AbsorptionDatabase:
         """
         return self._spectral_coverage
 
-    @cachedmethod(lambda self: self._cache)
+    @cachedmethod(lambda self: self._fname_dataset_cache)
     def load_dataset(self, fname: str) -> xr.Dataset:
         """
         Convenience method to load a dataset. This method is decorated with
@@ -502,23 +557,29 @@ class AbsorptionDatabase:
 
     def cache_clear(self) -> None:
         """
-        Clear the cache.
+        Clear the cache. Cached datasets are closed in the process (see
+        :class:`.util.ClosingLRUCache`).
         """
-        self._cache.clear()
+        self._fname_dataset_cache.clear()
+        self._thermophysical_plan_cache.clear()
+        self._wl_fname_cache.clear()
 
     def cache_close(self) -> None:
         """
         Close all cached datasets.
         """
-        for value in self._cache.values():
-            value.close()
+        self._fname_dataset_cache.clear()
+        self._wl_fname_cache.clear()
 
     def cache_reset(self, maxsize: int) -> None:
         """
-        Reset the cache with the specified maximum size.
+        Reset the cache with the specified maximum size, closing any
+        currently cached dataset.
         """
-        self._cache.clear()
-        self._cache = LRUCache(maxsize=maxsize)
+        self._fname_dataset_cache.clear()
+        self._fname_dataset_cache = ClosingLRUCache(maxsize=maxsize)
+        self._thermophysical_plan_cache = LRUCache(maxsize=maxsize)
+        self._wl_fname_cache = LRUCache(maxsize=maxsize)
 
     def lookup_filenames(self, /, **kwargs) -> list[str]:
         """
@@ -581,6 +642,20 @@ class AbsorptionDatabase:
         filenames = self.lookup_filenames(**kwargs)
         return [self.load_dataset(filename) for filename in filenames]
 
+    def _resolve_dataset(self, w: pint.Quantity) -> xr.Dataset:
+        """
+        Resolve the dataset covering a wavelength coordinate, memoizing on
+        the (scalar or array) wavelength value to avoid repeated file lookups
+        for calls that share the same spectral coordinate.
+        """
+        chunks = self._chunks["wl"]
+        key = tuple(np.atleast_1d(w.m_as(chunks.units)).tolist())
+        fname = self._wl_fname_cache.get(key)
+        if fname is None:
+            fname = self.lookup_filenames(wl=w)[0]
+            self._wl_fname_cache[key] = fname
+        return self.load_dataset(fname)
+
     def eval_sigma_a_mono(
         self,
         w: pint.Quantity,
@@ -630,6 +705,7 @@ class AbsorptionDatabase:
         ----------
         w : quantity
             The wavelength for which the absorption coefficient is evaluated.
+            Must be scalar or length-1.
 
         g : float
             The g-point for which the absorption coefficient is evaluated.
@@ -652,13 +728,48 @@ class AbsorptionDatabase:
         """
         raise NotImplementedError
 
-    @staticmethod
-    def _interp_thermophysical(
+    def _thermophysical_plan(
+        self,
         ds: xr.Dataset,
-        da: xr.DataArray,
         thermoprops: xr.Dataset,
         error_handling_config: ErrorHandlingConfiguration,
-    ) -> tuple[xr.DataArray, list[Hashable]]:
+    ) -> _ThermophysicalPlan:
+        # This part only depends on which file was loaded (ds), which species
+        # are present in thermoprops, and the error handling policy — it is
+        # invariant across repeated calls sharing those three, so it is
+        # memoized here to avoid rebuilding it on every single (w, g) call.
+        #
+        # The key is built from policy contents rather than
+        # id(error_handling_config): ErrorHandlingConfiguration objects are
+        # often short-lived (e.g. freshly converted from a dict on each
+        # call), and CPython can reuse a just-freed object's id for an
+        # unrelated new object, which would otherwise silently return a
+        # stale plan for a different policy.
+        #
+        # attrs.astuple recurses into the nested BoundsPolicy pair, so any
+        # field added to ErrorHandlingPolicy/BoundsPolicy is automatically
+        # picked up here, instead of requiring this key to be hand-updated
+        # in lockstep.
+        def _policy_key(policy: ErrorHandlingPolicy) -> tuple:
+            return attrs.astuple(policy)
+
+        key = (
+            # `ds` is always sourced from `load_dataset`, which sets
+            # `encoding["source"]` via xr.open_dataset/xr.load_dataset, so
+            # this id() fallback never fires on the real loading path. It
+            # only guards a caller that would build/copy an in-memory
+            # Dataset and call this method directly, bypassing
+            # `load_dataset` — do not do that without revisiting this key.
+            ds.encoding.get("source", id(ds)),
+            frozenset(dv for dv in thermoprops.data_vars if dv.startswith("x_")),
+            _policy_key(error_handling_config.t),
+            _policy_key(error_handling_config.p),
+            _policy_key(error_handling_config.x),
+        )
+        plan = self._thermophysical_plan_cache.get(key)
+        if plan is not None:
+            return plan
+
         # List requested species concentrations
         x_ds = [coord for coord in ds.coords if coord.startswith("x_")]
         x_ds_scalar = [coord for coord in x_ds if ds[coord].size == 1]
@@ -667,15 +778,6 @@ class AbsorptionDatabase:
         x_thermoprops = [dv for dv in thermoprops.data_vars if dv.startswith("x_")]
         x_missing = set(x_ds_array) - set(x_thermoprops)
         x_ds_array = x_ds_array - x_missing
-
-        # Select on scalar coordinates and missing concentrations
-        result = da.isel(**dict.fromkeys(x_ds_scalar + list(x_missing), 0))
-
-        # Build interpolation parameters
-        coords = {"t": thermoprops["t"], "p": thermoprops["p"]}
-
-        for x in x_ds_array:
-            coords[x] = thermoprops[x]
 
         # Check bounds for each dimension and apply the configured policy
         # (IGNORE: skip, WARN: emit warning, RAISE: raise error).
@@ -686,6 +788,78 @@ class AbsorptionDatabase:
             *[(x, error_handling_config.x) for x in x_ds_array],
         ]
 
+        # Build bounds mode and fill value dicts from error handling config
+        # The interpolation layer supports:
+        # - Symmetric modes: bounds="fill" or "clamp"
+        # - Asymmetric fill values: fill_value=(lower, upper)
+        #
+        # For asymmetric modes (e.g., clamp lower, fill upper), we need to
+        # handle this differently since the interpolation layer doesn't support
+        # per-bound mode control. Strategy:
+        # - If both bounds use "clamp": use bounds="clamp"
+        # - If both bounds use "fill": use bounds="fill" with fill_value tuple
+        # - If mixed: use bounds="fill" and apply clamping manually
+        #   (for now, fall back to "fill" - TODO: implement mixed mode support)
+
+        bounds = {}
+        fill_value = {}
+
+        for dim, policy in bounds_checks:
+            lower_policy, upper_policy = policy.bounds  # Unpack tuple
+
+            # Determine bounds mode
+            if lower_policy.mode == upper_policy.mode:
+                # Symmetric mode
+                bounds[dim] = lower_policy.mode.value
+            else:
+                # Asymmetric mode: fall back to "fill"
+                bounds[dim] = "fill"
+                # TODO: Implement proper mixed clamp/fill support in interpolation layer
+
+            # Determine fill values (None → NaN)
+            lower_fill = (
+                np.nan if lower_policy.fill_value is None else lower_policy.fill_value
+            )
+            upper_fill = (
+                np.nan if upper_policy.fill_value is None else upper_policy.fill_value
+            )
+            fill_value[dim] = (lower_fill, upper_fill)
+
+        plan = _ThermophysicalPlan(
+            x_ds=x_ds,
+            x_ds_scalar=x_ds_scalar,
+            x_ds_array=x_ds_array,
+            x_missing=x_missing,
+            bounds_checks=bounds_checks,
+            bounds=bounds,
+            fill_value=fill_value,
+        )
+        self._thermophysical_plan_cache[key] = plan
+        return plan
+
+    @staticmethod
+    def _check_thermophysical_bounds(
+        ds: xr.Dataset,
+        coords: dict[Hashable, xr.DataArray],
+        bounds_checks: list[tuple[Hashable, ErrorHandlingPolicy]],
+    ) -> None:
+        """
+        Apply each dimension's bounds-check policy against the live query
+        values, raising or warning per :func:`.handle_error` as configured.
+
+        Parameters
+        ----------
+        ds : Dataset
+            The dataset providing the reference grid for each dimension.
+
+        coords : dict
+            Mapping of dimension name to the query values (thermophysical
+            profile coordinates) checked against ``ds``'s grid.
+
+        bounds_checks : list of (Hashable, ErrorHandlingPolicy)
+            The (dimension, policy) pairs to check, as returned by
+            :meth:`_thermophysical_plan`.
+        """
         for dim, policy in bounds_checks:
             lower_policy, upper_policy = policy.bounds  # Unpack tuple
 
@@ -716,47 +890,77 @@ class AbsorptionDatabase:
                     upper_policy.action,
                 )
 
-        # Build bounds mode and fill value dicts from error handling config
-        # The interpolation layer supports:
-        # - Symmetric modes: bounds="fill" or "clamp"
-        # - Asymmetric fill values: fill_value=(lower, upper)
-        #
-        # For asymmetric modes (e.g., clamp lower, fill upper), we need to
-        # handle this differently since the interpolation layer doesn't support
-        # per-bound mode control. Strategy:
-        # - If both bounds use "clamp": use bounds="clamp"
-        # - If both bounds use "fill": use bounds="fill" with fill_value tuple
-        # - If mixed: use bounds="fill" and apply clamping manually
-        #   (for now, fall back to "fill" - TODO: implement mixed mode support)
+    def _interp_thermophysical(
+        self,
+        ds: xr.Dataset,
+        da: xr.DataArray,
+        thermoprops: xr.Dataset,
+        error_handling_config: ErrorHandlingConfiguration,
+    ) -> tuple[xr.DataArray, list[Hashable]]:
+        plan = self._thermophysical_plan(ds, thermoprops, error_handling_config)
 
-        bounds = {}
-        fill_value = {}
+        # Select on scalar coordinates and missing concentrations
+        result = da.isel(**dict.fromkeys(plan.x_ds_scalar + list(plan.x_missing), 0))
 
-        for dim, policy in bounds_checks:
-            lower_policy, upper_policy = policy.bounds  # Unpack tuple
+        # Build interpolation parameters
+        coords = {"t": thermoprops["t"], "p": thermoprops["p"]}
 
-            # Determine bounds mode
-            if lower_policy.mode == upper_policy.mode:
-                # Symmetric mode
-                bounds[dim] = lower_policy.mode
-            else:
-                # Asymmetric mode: fall back to "fill"
-                bounds[dim] = "fill"
-                # TODO: Implement proper mixed clamp/fill support in interpolation layer
+        for x in plan.x_ds_array:
+            coords[x] = thermoprops[x]
 
-            # Determine fill values (None → NaN)
-            lower_fill = (
-                np.nan if lower_policy.fill_value is None else lower_policy.fill_value
-            )
-            upper_fill = (
-                np.nan if upper_policy.fill_value is None else upper_policy.fill_value
-            )
-            fill_value[dim] = (lower_fill, upper_fill)
+        self._check_thermophysical_bounds(ds, coords, plan.bounds_checks)
 
         # Perform interpolation
-        result = interp_dataarray(result, coords, bounds=bounds, fill_value=fill_value)
+        result = interp_dataarray(
+            result, coords, bounds=plan.bounds, fill_value=plan.fill_value
+        )
 
-        return result, x_ds
+        return result, plan.x_ds
+
+    def _interp_thermophysical_raw(
+        self,
+        ds: xr.Dataset,
+        data: np.ndarray,
+        dims: list[Hashable],
+        old_coords: Mapping[Hashable, xr.DataArray],
+        thermoprops: xr.Dataset,
+        error_handling_config: ErrorHandlingConfiguration,
+    ) -> tuple[np.ndarray, list[Hashable], dict, list[Hashable]]:
+        """
+        Raw-numpy sibling of :meth:`_interp_thermophysical`: same bounds
+        checks and interpolation plan, but takes/returns plain numpy data
+        instead of an ``xr.DataArray``, so callers can defer DataArray
+        construction until the end of a longer pipeline.
+        """
+        plan = self._thermophysical_plan(ds, thermoprops, error_handling_config)
+
+        # Select on scalar coordinates and missing concentrations
+        iselect = plan.x_ds_scalar + list(plan.x_missing)
+        if iselect:
+            assert all(d in dims for d in iselect)
+            idx = tuple(0 if d in iselect else slice(None) for d in dims)
+            data = data[idx]
+            dims = [d for d in dims if d not in iselect]
+
+        # Build interpolation parameters
+        coords = {"t": thermoprops["t"], "p": thermoprops["p"]}
+
+        for x in plan.x_ds_array:
+            coords[x] = thermoprops[x]
+
+        self._check_thermophysical_bounds(ds, coords, plan.bounds_checks)
+
+        # Perform interpolation
+        data, dims, out_coords = _interp_core(
+            data,
+            dims,
+            old_coords,
+            coords,
+            bounds=plan.bounds,
+            fill_value=plan.fill_value,
+        )
+
+        return data, dims, out_coords, plan.x_ds
 
 
 @attrs.define(repr=False, eq=False)
@@ -823,17 +1027,14 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
     ) -> xr.DataArray:
         # Inherit docstring
 
-        ureg = get_unit_registry()
-
         if error_handling_config is None:
             error_handling_config = self.error_handling_config
 
         # Lookup dataset
-        ds = self.lookup_datasets(wl=w)[0]
+        ds = self._resolve_dataset(w)
 
         # Interpolate on spectral dimension
-        # TODO: Optimize
-        w_u = ureg(ds["w"].units)
+        w_u = parse_units(ds["w"].units)
         # Note: Support for wavenumber spectral lookup mode is suboptimal
         w_m = (1.0 / w).m_as(w_u) if w_u.check("[length]^-1") else w.m_as(w_u)
         result = ds["sigma_a"].interp(w=w_m, method="linear")
@@ -926,35 +1127,81 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
         #  * Above the cut-off altitude, the profile is filled with zeros.
         #  Cut-off detection is implemented with pressure-based masking.
 
-        # TODO: Use the 'assume_sorted' parameter of DataArray.interp()
-
         if error_handling_config is None:
             error_handling_config = self.error_handling_config
 
         # Lookup dataset
-        ds = self.lookup_datasets(wl=w)[0]
+        ds = self._resolve_dataset(w)
 
-        # Select bin
-        # TODO: Optimize
-        ureg = get_unit_registry()
-        w_u = ureg(ds["w"].units)
-        w_m = w.m_as(w_u)
-        result = ds["sigma_a"].sel(w=w_m, method="nearest")
+        # Select bin. Stays on raw numpy throughout (instead of
+        # ds["sigma_a"].sel(w=w_m, method="nearest") plus two more
+        # DataArray-in/DataArray-out interpolation steps below) so only one
+        # xr.DataArray is constructed, at the very end of this method.
+        # Only scalar/length-1 w is supported (matches all current usage).
+        w_u = parse_units(ds["w"].units)
+        w_m = np.atleast_1d(w.m_as(w_u))
+        assert w_m.size == 1, "eval_sigma_a_ckd only supports scalar/length-1 w"
+        w_m = w_m[0]
 
-        # Interpolate along g
-        result = result.interp(g=g).drop_vars("g")
+        w_vals = ds["w"].values
+        n = w_vals.size
+        if n == 1:
+            w_idx = 0
+        else:
+            # Nearest-neighbor lookup on a sorted grid, matching xarray's
+            # .sel(method="nearest") tie-break (exact midpoints resolve to
+            # the upper neighbor) — verified empirically against the real
+            # test fixtures. Reuses the same sorted-grid binary search as
+            # lerp_indices (used for linear interpolation elsewhere in the
+            # package) instead of a second, independent implementation:
+            # weight < 0.5 means the query is closer to the lower grid
+            # point, weight >= 0.5 (including exact midpoints) means it's
+            # at least as close to the upper one.
+            left_idx, weight = lerp_indices(w_vals, np.array([w_m]), bounds="clamp")
+            w_idx = int(left_idx[0]) + (1 if weight[0] >= 0.5 else 0)
+
+        sigma_a = ds["sigma_a"]
+        # The matched grid coordinate (not the raw query value), matching
+        # xr.DataArray.sel(method="nearest")'s behaviour: it labels the
+        # result with the grid point it actually selected.
+        w_coord = sigma_a.coords["w"].isel(w=w_idx)
+        w_axis = sigma_a.dims.index("w")
+        # np.take always copies, never a view: `data` must never alias
+        # ds["sigma_a"].values, since it's LRU-cached and reused across
+        # calls, and later steps may mutate `data` in place for fill values.
+        data = np.take(sigma_a.values, w_idx, axis=w_axis)
+        dims = [d for d in sigma_a.dims if d != "w"]
+
+        # Interpolate along g. `g` is a small, sorted, static grid, so this
+        # uses the package's fast interpolation helper instead of
+        # DataArray.interp(), which pays for a generic sortby/align pass on
+        # every call.
+        data, dims, _ = _interp_core(data, dims, sigma_a.coords, {"g": g})
 
         # Interpolate on thermophysical dimensions
-        result, x_ds = self._interp_thermophysical(
-            ds, result, thermoprops, error_handling_config
+        data, dims, out_coords, x_ds = self._interp_thermophysical_raw(
+            ds, data, dims, sigma_a.coords, thermoprops, error_handling_config
         )
 
         # Drop thermophysical coordinates, ensure spectral dimension
-        result = result.drop_vars(["p", "t", *x_ds], errors="ignore")
-        if "w" not in result.dims:
-            result = result.expand_dims("w")
+        for name in ("p", "t", *x_ds):
+            out_coords.pop(name, None)
+        if "w" not in dims:
+            dims = ["w", *dims]
+            data = data[np.newaxis, ...]
+        out_coords["w"] = ("w", np.array([w_coord.values]), dict(w_coord.attrs))
 
-        return result.transpose("w", "z")
+        assert set(dims) == {"w", "z"}
+        data = data.transpose(dims.index("w"), dims.index("z"))
+        dims = ["w", "z"]
+
+        return xr.DataArray(
+            data,
+            dims=dims,
+            coords=out_coords,
+            name=sigma_a.name,
+            attrs=sigma_a.attrs,
+        )
 
 
 def get_absdb_type(mode: Literal["mono", "ckd"]) -> type:
