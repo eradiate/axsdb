@@ -1,8 +1,8 @@
 # AxsDB v1 — Design Document
 
-> Document generated and edited by Vincent Leroy with Claude Sonnet 4.6.
-> This is work in progress: there might be mistakes or missing parts.
-> I still need to research REPTRAN to understand it completely.
+> **AI Disclosure**: Document generated and edited by Vincent Leroy with Claude
+> Sonnet 4.6. This is work in progress: there might be mistakes or missing
+> parts. I still need to research REPTRAN to understand it completely.
 
 ## Glossary
 
