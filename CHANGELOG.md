@@ -5,6 +5,8 @@
 ## AxsDB 0.2.0 (*upcoming release*)
 
 * Exposed `units` module as public API ({ghpr}`17`).
+* Fixed the rebuild of a missing `spectral.csv` file, which always failed with
+  a `TypeError`.
 
 ## AxsDB 0.1.2 (2026-02-18)
 
