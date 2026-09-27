@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md
 
 This file provides guidance to coding agents when working with code in this repository.
 
@@ -16,21 +16,21 @@ environment to activate — prefix commands with `uv run` and `uv` will resolve
 the environment automatically.
 
 ```shell
-uv sync --group dev              # install all dev dependencies (test+docs+benchmark)
+uv sync --all-groups --all-extras # install all dev dependencies (test+docs+benchmark)
 
-uv run pytest                    # run the full test suite (also runs doctests)
-uv run pytest tests/test_core.py # run a single test file
+uv run pytest                     # run the full test suite (also runs doctests)
+uv run pytest tests/test_core.py  # run a single test file
 uv run pytest tests/test_core.py::test_name  # run a single test
-uv run pytest --cov=src          # run tests with coverage
-uv run task test-cov-report      # coverage with HTML report (taskipy)
+uv run pytest --cov=src           # run tests with coverage
+uv run poe test-cov-report        # coverage with HTML report (poe)
 
-uv run task docs                 # build the Sphinx docs (docs/_build/html)
-uv run task docs-serve           # live-reload docs server
-uv run task benchmark            # run the pytest-benchmark suite (benchmarks/)
+uv run poe docs                   # build the Sphinx docs (docs/_build/html)
+uv run poe docs-serve             # live-reload docs server
+uv run poe bench                  # run the pytest-benchmark suite (benchmarks/)
 
-uv run ruff check .              # lint
-uv run ruff format .             # format
-pre-commit run --all-files       # ruff, taplo (TOML), nbstripout, uv-export
+uv run ruff check .               # lint
+uv run ruff format .              # format
+pre-commit run --all-files        # ruff, taplo (TOML), nbstripout, uv-export
 ```
 
 The pytest configuration lives in `pyproject.toml` under

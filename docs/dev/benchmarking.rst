@@ -16,8 +16,8 @@ discover files (``benchmark_``), classes (``Benchmark``) and functions
 
 .. code-block:: shell
 
-    # with the dedicated taskipy task
-    uv run task benchmarks
+    # with the dedicated task
+    uv run poe bench
     # or directly calling pytest, with the development environment activated
     pytest benchmarks
 

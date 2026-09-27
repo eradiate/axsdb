@@ -73,7 +73,7 @@ docs = [
 ]
 benchmark = ["pytest-benchmark", "pyinstrument"]
 dev = [
-  "taskipy",
+  "poethepoet",
   "ruff",
   { include-group = "test" },
   { include-group = "docs" },
@@ -125,7 +125,7 @@ addopts = "-ra -vv --doctest-plus --doctest-glob='*.rst'"
 doctest_plus = "enabled"
 doctest_optionflags = "NORMALIZE_WHITESPACE ELLIPSIS"
 
-[tool.taskipy.tasks]
+[tool.poe.tasks]
 docs = { cmd = "sphinx-build -b html docs docs/_build/html", cwd = "." }
 docs-clean = { cmd = "rm -rf docs/_build/", cwd = "." }
 docs-serve = { cmd = "sphinx-autobuild docs docs/_build/html", cwd = "." }
@@ -133,5 +133,5 @@ docs-lock = { cmd = "uv export --frozen --no-hashes --output-file=docs/requireme
 test = { cmd = "pytest", cwd = "." }
 test-cov = { cmd = "pytest --cov=src", cwd = "." }
 test-cov-report = { cmd = "pytest --cov=src --cov-report=html", cwd = "." }
-benchmark = { cmd = "pytest benchmarks", cwd = "." }
+bench = { cmd = "pytest benchmarks", cwd = "." }
 profile = { cmd = "pyinstrument -r html -o reports/profile.html", cwd = "." }
