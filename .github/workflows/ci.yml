@@ -68,7 +68,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           # Use latest, so it understands all syntax.
-          python-version: "3.13"
+          python-version: "3.14"
 
       - run: python -m pip install --upgrade coverage[toml]
 
