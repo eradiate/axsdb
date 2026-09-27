@@ -71,13 +71,14 @@ docs = [
   "sphinx-iconify",
 ]
 benchmark = ["pytest-benchmark", "pyinstrument"]
+lint = ["poethepoet", "prek"]
 dev = [
-  "poethepoet",
   "ruff",
   "sp-repo-review[cli]; python_version>='3.10'",
   { include-group = "test" },
   { include-group = "docs" },
   { include-group = "benchmark" },
+  { include-group = "lint" },
 ]
 pycharm = ["setuptools", { include-group = "dev" }]
 interactive = ["jupyterlab", "matplotlib"]
@@ -149,10 +150,11 @@ test-cov-report = { cmd = "pytest --cov=src --cov-report=html", cwd = "." }
 bench = { cmd = "pytest benchmarks", cwd = "." }
 profile = { cmd = "pyinstrument -r html -o reports/profile.html", cwd = "." }
 repo-review = { cmd = "repo-review .", cwd = "." }
+lint = "prek run --all-files"
 
 [tool.repo-review.ignore]
 MY100 = "Type checking will be applied later"
-PC140 = "ty runs from a local hook against the pixi environment, not from the mirror."
+PC140 = "Type checking will be applied later"
 PC111 = "ruff-format is scoped to Python; Markdown code blocks are not formatted"
 PC160 = "No spell checker."
 PC170 = "No rST formatter."

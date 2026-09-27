@@ -26,7 +26,7 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
         Browse the API reference.
 
     .. grid-item-card:: :iconify:`material-symbols:code height=1.5em` Developer guide
-        :link: dev/installation
+        :link: dev/index
         :link-type: doc
 
         Contribute to and maintain AxsDB.
@@ -63,6 +63,7 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
     :hidden:
     :caption: Development
 
+    dev/index
     dev/installation
     dev/benchmarking
     dev/interpolation

@@ -11,8 +11,8 @@ Running the benchmarking suite
 
 The pytest-benchmark plugin is loaded only when running the benchmarking suite.
 A local configuration file changes the prefixes used by pytest to
-discover files (``benchmark_``), classes (``Benchmark``) and functions
-(``benchmark_``). Just run
+discover files (``bench_``), classes (``Bench``) and functions
+(``bench_``). Just run
 
 .. code-block:: shell
 
