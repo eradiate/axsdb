@@ -1,10 +1,15 @@
 # AxsDB — The Eradiate Absorption Cross-section Database Interface
 
-[![PyPI version](https://img.shields.io/pypi/v/axsdb?color=blue)](https://pypi.org/project/axsdb)
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/actions/workflow/status/eradiate/axsdb/ci.yml?branch=main)](https://github.com/eradiate/axsdb/actions/workflows/ci.yml)
-[![Documentation Status](https://img.shields.io/readthedocs/axsdb)](https://axsdb.readthedocs.io)
-[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
-[![ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![pypi][pypi-badge]][pypi-url]
+[![ci][ci-badge]][ci-url]
+[![docs][docs-badge]][docs-url]
+
+[pypi-badge]: https://img.shields.io/pypi/v/axsdb?style=flat-square&color=blue
+[pypi-url]: https://pypi.org/project/axsdb/
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/eradiate/axsdb/ci.yml?branch=main&style=flat-square
+[ci-url]: https://github.com/eradiate/axsdb/actions/workflows/ci.yml
+[docs-badge]: https://img.shields.io/readthedocs/axsdb?style=flat-square
+[docs-url]: https://axsdb.readthedocs.io
 
 This library provides an interface to read and query the absorption databases
 of the [Eradiate radiative transfer model](https://eradiate.eu).
