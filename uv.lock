@@ -266,6 +266,7 @@ dev = [
     { name = "ruff" },
     { name = "shibuya", version = "2025.10.21", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "shibuya", version = "2026.1.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "sp-repo-review", extra = ["cli"], marker = "python_full_version >= '3.10'" },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -320,6 +321,7 @@ pycharm = [
     { name = "setuptools" },
     { name = "shibuya", version = "2025.10.21", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "shibuya", version = "2026.1.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "sp-repo-review", extra = ["cli"], marker = "python_full_version >= '3.10'" },
     { name = "sphinx", version = "7.4.7", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
     { name = "sphinx", version = "8.2.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -366,7 +368,7 @@ dev = [
     { name = "myst-parser" },
     { name = "poethepoet" },
     { name = "pyinstrument" },
-    { name = "pytest" },
+    { name = "pytest", specifier = ">=6" },
     { name = "pytest-benchmark" },
     { name = "pytest-cov" },
     { name = "pytest-datadir" },
@@ -374,6 +376,7 @@ dev = [
     { name = "rich" },
     { name = "ruff" },
     { name = "shibuya" },
+    { name = "sp-repo-review", extras = ["cli"], marker = "python_full_version >= '3.10'" },
     { name = "sphinx" },
     { name = "sphinx-autobuild", specifier = ">=2021" },
     { name = "sphinx-copybutton", specifier = ">=0.5.2" },
@@ -400,7 +403,7 @@ pycharm = [
     { name = "myst-parser" },
     { name = "poethepoet" },
     { name = "pyinstrument" },
-    { name = "pytest" },
+    { name = "pytest", specifier = ">=6" },
     { name = "pytest-benchmark" },
     { name = "pytest-cov" },
     { name = "pytest-datadir" },
@@ -409,6 +412,7 @@ pycharm = [
     { name = "ruff" },
     { name = "setuptools" },
     { name = "shibuya" },
+    { name = "sp-repo-review", extras = ["cli"], marker = "python_full_version >= '3.10'" },
     { name = "sphinx" },
     { name = "sphinx-autobuild", specifier = ">=2021" },
     { name = "sphinx-copybutton", specifier = ">=0.5.2" },
@@ -417,7 +421,7 @@ pycharm = [
 ]
 test = [
     { name = "coverage", specifier = ">=7.10.0" },
-    { name = "pytest" },
+    { name = "pytest", specifier = ">=6" },
     { name = "pytest-cov" },
     { name = "pytest-datadir" },
     { name = "pytest-doctestplus" },
@@ -4710,6 +4714,27 @@ wheels = [
 ]
 
 [[package]]
+name = "repo-review"
+version = "1.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "markdown-it-py", version = "3.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "markdown-it-py", version = "4.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "pyyaml" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/09/67/acaea59cd406f011918646309c872ea31c7bd7088626edf5fb5d18cc3c3a/repo_review-1.2.1.tar.gz", hash = "sha256:3f81d198c66aa93e86e6d1081fc14cb3ab21fbe47b988b062e69ae8f3692f1cc", size = 116501, upload-time = "2026-06-18T18:04:36.491Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/56/31/a89a64bef8780326f4348d38f5bc9560c2a583e9e2a74c21d87932b94ec6/repo_review-1.2.1-py3-none-any.whl", hash = "sha256:b02601ab603e7f9fde6f9e4bda27f32f263a9ba439cc23c17a60e779b3856287", size = 30646, upload-time = "2026-06-18T18:04:34.676Z" },
+]
+
+[package.optional-dependencies]
+cli = [
+    { name = "rich" },
+]
+
+[[package]]
 name = "requests"
 version = "2.32.5"
 source = { registry = "https://pypi.org/simple" }
@@ -5389,6 +5414,25 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7b/ae/2d9c981590ed9999a0d91755b47fc74f74de286b0f5cee14c9269041e6c4/soupsieve-2.8.3.tar.gz", hash = "sha256:3267f1eeea4251fb42728b6dfb746edc9acaffc4a45b27e19450b676586e8349", size = 118627, upload-time = "2026-01-20T04:27:02.457Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/46/2c/1462b1d0a634697ae9e55b3cecdcb64788e8b7d63f54d923fcd0bb140aed/soupsieve-2.8.3-py3-none-any.whl", hash = "sha256:ed64f2ba4eebeab06cc4962affce381647455978ffc1e36bb79a545b91f45a95", size = 37016, upload-time = "2026-01-20T04:27:01.012Z" },
+]
+
+[[package]]
+name = "sp-repo-review"
+version = "2026.8.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+    { name = "repo-review" },
+    { name = "tomli", marker = "python_full_version < '3.11'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/40/6a/76076f60ff0798d0dbc614e42b9e1e8e19ef4d1781684813969b17a15889/sp_repo_review-2026.8.14.tar.gz", hash = "sha256:8548cf930141593c82fb869e0a80333da9651bd252efb5b0bd679c2ec409175b", size = 204641, upload-time = "2026-08-14T17:26:40.461Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9c/da/f9dec1e36bacd504e1bcac373776d3ec0815fdfb8387fc9373182bc25a38/sp_repo_review-2026.8.14-py3-none-any.whl", hash = "sha256:c70f78794cf07cf5ab94480967854a1d5922760ba0f6ab2219d5c5f1ef659b9e", size = 35262, upload-time = "2026-08-14T17:26:39.045Z" },
+]
+
+[package.optional-dependencies]
+cli = [
+    { name = "repo-review", extra = ["cli"] },
 ]
 
 [[package]]

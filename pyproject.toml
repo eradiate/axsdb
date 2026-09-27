@@ -20,7 +20,6 @@ keywords = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -55,7 +54,7 @@ axsdb = "axsdb.cli:main"
 [dependency-groups]
 test = [
   "coverage>=7.10.0",
-  "pytest",
+  "pytest>=6",
   "pytest-cov",
   "pytest-datadir",
   "pytest-doctestplus",
@@ -75,6 +74,7 @@ benchmark = ["pytest-benchmark", "pyinstrument"]
 dev = [
   "poethepoet",
   "ruff",
+  "sp-repo-review[cli]; python_version>='3.10'",
   { include-group = "test" },
   { include-group = "docs" },
   { include-group = "benchmark" },
@@ -118,10 +118,23 @@ parallel = true
 source = ["src/"]
 
 [tool.pytest.ini_options]
+minversion = "6"
+log_level = "INFO"
+xfail_strict = true
+filterwarnings = ["error"]
+addopts = [
+  "-ra",
+  "-vv",
+  "--doctest-plus",
+  "--doctest-glob='*.rst'",
+  "--strict-config",
+  "--strict-markers",
+]
+
 testpaths = ["tests", "src", "docs"]
 norecursedirs = [".git", ".env", "dist", "__pypackages__"]
 python_files = ["test_*.py", "*_test.py", "tests.py"]
-addopts = "-ra -vv --doctest-plus --doctest-glob='*.rst'"
+
 doctest_plus = "enabled"
 doctest_optionflags = "NORMALIZE_WHITESPACE ELLIPSIS"
 
@@ -135,3 +148,15 @@ test-cov = { cmd = "pytest --cov=src", cwd = "." }
 test-cov-report = { cmd = "pytest --cov=src --cov-report=html", cwd = "." }
 bench = { cmd = "pytest benchmarks", cwd = "." }
 profile = { cmd = "pyinstrument -r html -o reports/profile.html", cwd = "." }
+repo-review = { cmd = "repo-review .", cwd = "." }
+
+[tool.repo-review.ignore]
+MY100 = "Type checking will be applied later"
+PC140 = "ty runs from a local hook against the pixi environment, not from the mirror."
+PC111 = "ruff-format is scoped to Python; Markdown code blocks are not formatted"
+PC160 = "No spell checker."
+PC170 = "No rST formatter."
+PC180 = "No Markdown formatter."
+PC901 = "Not using pre-commit.ci."
+PC902 = "Not using pre-commit.ci."
+PC903 = "Not using pre-commit.ci."

@@ -86,11 +86,13 @@ markdown-it-py==3.0.0 ; python_full_version < '3.11'
     # via
     #   mdit-py-plugins
     #   myst-parser
+    #   repo-review
     #   rich
 markdown-it-py==4.0.0 ; python_full_version >= '3.11'
     # via
     #   mdit-py-plugins
     #   myst-parser
+    #   repo-review
     #   rich
 markupsafe==3.0.3
     # via jinja2
@@ -202,10 +204,16 @@ pyyaml==6.0.3
     # via
     #   myst-parser
     #   poethepoet
+    #   repo-review
+    #   sp-repo-review
+repo-review==1.2.1 ; python_full_version >= '3.10'
+    # via sp-repo-review
 requests==2.32.5
     # via sphinx
 rich==14.3.2
-    # via typer
+    # via
+    #   repo-review
+    #   typer
 roman-numerals==4.1.0 ; python_full_version >= '3.11'
     # via roman-numerals-py
 roman-numerals-py==4.1.0 ; python_full_version >= '3.11'
@@ -225,6 +233,7 @@ six==1.17.0
     # via python-dateutil
 snowballstemmer==3.0.1
     # via sphinx
+sp-repo-review==2026.8.14 ; python_full_version >= '3.10'
 sphinx==7.4.7 ; python_full_version < '3.10'
     # via
     #   autodocsumm
@@ -279,6 +288,8 @@ tomli==2.4.0 ; python_full_version <= '3.11'
     #   coverage
     #   poethepoet
     #   pytest
+    #   repo-review
+    #   sp-repo-review
     #   sphinx
 typer==0.23.2 ; python_full_version < '3.10'
     # via axsdb
@@ -291,6 +302,7 @@ typing-extensions==4.15.0
     #   flexcache
     #   flexparser
     #   pint
+    #   repo-review
     #   starlette
     #   uvicorn
 tzdata==2025.3 ; python_full_version < '3.11' or sys_platform == 'emscripten' or sys_platform == 'win32'
