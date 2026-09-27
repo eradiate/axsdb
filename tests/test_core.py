@@ -10,8 +10,9 @@ from axsdb import (
     ErrorHandlingConfiguration,
     MonoAbsorptionDatabase,
 )
-from axsdb.core import get_absdb_type
+from axsdb.core import _bracket_indices, get_absdb_type
 from axsdb.error import ErrorHandlingAction, InterpolationError
+from axsdb.interpolation import interp_dataarray
 from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import get_unit_registry
 
@@ -140,8 +141,8 @@ class TestCKDAbsorptionDatabase:
         absorption_database_error_handler_config,
     ):
         # _interp_thermophysical_raw (numpy in/out) must produce the exact
-        # same result as _interp_thermophysical (DataArray in/out) for the
-        # same inputs.
+        # same result as the public interp_dataarray (DataArray in/out) with
+        # the same interpolation plan.
         error_handling_config = ErrorHandlingConfiguration.convert(
             absorption_database_error_handler_config
         )
@@ -151,7 +152,16 @@ class TestCKDAbsorptionDatabase:
         )
         da = ds["sigma_a"].sel(w=350.0, method="nearest")
 
-        expected = absdb_ckd._interp_thermophysical(plan, da, thermoprops_us_standard)
+        expected = interp_dataarray(
+            da.isel(**dict.fromkeys(plan.x_ds_scalar + list(plan.x_missing), 0)),
+            {
+                "t": thermoprops_us_standard["t"],
+                "p": thermoprops_us_standard["p"],
+                **{x: thermoprops_us_standard[x] for x in plan.x_ds_array},
+            },
+            bounds=plan.bounds,
+            fill_value=plan.fill_value,
+        )
 
         data, dims, out_coords = absdb_ckd._interp_thermophysical_raw(
             plan,
@@ -164,6 +174,23 @@ class TestCKDAbsorptionDatabase:
         assert dims == list(expected.dims)
         np.testing.assert_array_equal(data, expected.values)
         assert set(out_coords) == set(expected.coords)
+
+
+@pytest.mark.parametrize(
+    "grid",
+    [np.array([1.0, 2.0, 4.0, 8.0]), np.array([8.0, 4.0, 2.0, 1.0])],
+    ids=["ascending", "descending"],
+)
+def test_bracket_indices(grid):
+    y = np.array([3.0, -1.0, 5.0, 2.0])
+    query = np.array([0.5, 1.0, 1.5, 2.0, 3.0, 7.9, 8.0, 9.0])
+    i0, i1, weights = _bracket_indices(grid, query)
+    result = y[i0] + weights * (y[i1] - y[i0])
+
+    # np.interp requires an ascending grid
+    order = np.argsort(grid)
+    expected = np.interp(query, grid[order], y[order], left=np.nan, right=np.nan)
+    np.testing.assert_allclose(result, expected)
 
 
 @pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
