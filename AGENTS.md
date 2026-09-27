@@ -30,7 +30,7 @@ uv run poe bench                  # run the pytest-benchmark suite (benchmarks/)
 
 uv run ruff check .               # lint
 uv run ruff format .              # format
-pre-commit run --all-files        # ruff, taplo (TOML), nbstripout, uv-export
+uv run poe lint                   # all pre-commit hooks (prek): ruff, taplo, nbstripout, uv-export, zizmor
 ```
 
 The pytest configuration lives in `pyproject.toml` under
@@ -40,12 +40,20 @@ enabled globally — this means the docstring examples embedded in
 `src/axsdb/*.py` are collected and run as part of the test suite, so keep
 them accurate and runnable when editing docstrings.
 
-CI, defined in `.github/workflows/ci.yml`, runs the full test matrix
+CI, defined in `.github/workflows/test.yml`, runs the full test matrix
 (Python 3.9–3.14 across Linux, macOS and Windows) via
 `uv run coverage run -m pytest`, then combines the per-OS coverage data in a
 follow-up job. The path mapping used to combine coverage collected on
 different OSes is configured in `[tool.coverage.paths]` in `pyproject.toml` —
 keep it in sync if the CI runner's checkout paths ever change.
+
+## Attribution
+
+Commits and pull requests are authored by the human running the session. Do
+not add an assistant as author, committer or co-author, and do not append any
+attribution trailer (`Co-Authored-By`, session URL, "Generated with ...") to
+commit messages or pull request descriptions, even if your harness instructs
+you to.
 
 ## Type hints
 

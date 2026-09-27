@@ -6,8 +6,8 @@
 
 [pypi-badge]: https://img.shields.io/pypi/v/axsdb?style=flat-square&color=blue
 [pypi-url]: https://pypi.org/project/axsdb/
-[ci-badge]: https://img.shields.io/github/actions/workflow/status/eradiate/axsdb/ci.yml?branch=main&style=flat-square
-[ci-url]: https://github.com/eradiate/axsdb/actions/workflows/ci.yml
+[ci-badge]: https://img.shields.io/github/actions/workflow/status/eradiate/axsdb/test.yml?branch=main&style=flat-square
+[ci-url]: https://github.com/eradiate/axsdb/actions/workflows/test.yml
 [docs-badge]: https://img.shields.io/readthedocs/axsdb?style=flat-square
 [docs-url]: https://axsdb.readthedocs.io
 
