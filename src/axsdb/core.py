@@ -48,18 +48,32 @@ class _ThermophysicalPlan(NamedTuple):
 
     #: Species concentration coordinates present in the dataset.
     x_ds: list[Hashable]
+
     #: Subset of ``x_ds`` that is scalar (size 1) in the dataset.
     x_ds_scalar: list[Hashable]
+
     #: Subset of ``x_ds`` that is array-valued and present in the profile.
     x_ds_array: set[Hashable]
+
     #: Subset of ``x_ds`` that is array-valued but missing from the profile.
     x_missing: set[Hashable]
+
     #: (dimension, policy) pairs to bounds-check.
     bounds_checks: list[tuple[Hashable, ErrorHandlingPolicy]]
+
     #: Interpolation bounds mode ("fill"/"clamp"/"raise") per dimension.
     bounds: dict[Hashable, str]
+
     #: (lower, upper) fill values per dimension.
     fill_value: dict[Hashable, tuple[float, float]]
+
+    #: Coordinates of the ``sigma_a`` variable.
+    coords: dict[Hashable, xr.Variable]  # Reading ``.values`` on these is
+    # cheaper than on the dataset's index coordinates (goes through pandas adapter
+    #  on every access).
+
+    #: (min, max) of the dataset grid for each dimension in ``bounds_checks``.
+    grid_bounds: dict[Hashable, tuple[float, float]]
 
 
 @attrs.define(slots=False, repr=False, eq=False)
@@ -126,7 +140,7 @@ class AbsorptionDatabase:
     Database access and memory usage can be controlled through two parameters:
 
     * File queries are stored in an LRU cache. The initial size is set to a low
-      value (8) and should be appropriate for most situations. If more cache
+      value (16) and should be appropriate for most situations. If more cache
       control is needed, the :meth:`cache_clear`,  :meth:`cache_close` and
       :meth:`cache_reset` methods can be used.
     * Datasets can be open with an eager or lazy approach. This behaviour is
@@ -175,6 +189,10 @@ class AbsorptionDatabase:
     #: spectral coordinate-based file lookup.
     _chunks: dict[str, np.ndarray] = attrs.field(factory=dict, repr=False, init=False)
 
+    #: File names in the index, as a numpy array (avoids pandas indexing
+    #: overhead during spectral lookups).
+    _filenames: np.ndarray = attrs.field(repr=False, init=False)
+
     #: Access mode switch: if ``True``, load data lazily; else, load data eagerly.
     lazy: bool = attrs.field(default=False, repr=False)
 
@@ -190,7 +208,7 @@ class AbsorptionDatabase:
     #: Cache mapping a resolved dataset file (by ``ds.encoding["source"]``),
     #: the species available in a thermophysical profile and an error
     #: handling configuration to the invariant part of the interpolation
-    #: plan computed in :meth:`_interp_thermophysical`.
+    #: plan computed in :meth:`_thermophysical_plan`.
     _thermophysical_plan_cache: LRUCache = attrs.field(
         factory=lambda: LRUCache(16), repr=False, init=False
     )
@@ -257,6 +275,7 @@ class AbsorptionDatabase:
         self._chunks["wn"] = np.concatenate(
             (quantities["wn_max"], [quantities["wn_min"][-1]])
         )
+        self._filenames = self._index["filename"].to_numpy()
 
     def __repr__(self) -> str:
         with pd.option_context("display.max_columns", 4):
@@ -521,9 +540,9 @@ class AbsorptionDatabase:
     @cachedmethod(lambda self: self._fname_dataset_cache)
     def load_dataset(self, fname: str) -> xr.Dataset:
         """
-        Convenience method to load a dataset. This method is decorated with
-        :func:`functools.lru_cache` with ``maxsize=1``, which limits the number
-        of reload events when repeatedly querying the same file.
+        Convenience method to load a dataset. Results are stored in an LRU
+        cache (16 datasets by default, see :meth:`cache_reset`), which limits
+        the number of reload events when repeatedly querying the same file.
 
         The behaviour of this method is also affected by the ``lazy`` parameter:
         if ``lazy`` is ``False``, files are loaded eagerly with
@@ -615,17 +634,18 @@ class AbsorptionDatabase:
         lookup_mode, values = next(iter(kwargs.items()))
         chunks = self._chunks[lookup_mode]
 
-        # Make sure that 'values' has the right units
-        values = ensure_units(np.atleast_1d(values), chunks.units)
+        # Make sure that 'values' has the right units, then work on magnitudes
+        values = ensure_units(np.atleast_1d(values), chunks.units).m_as(chunks.units)
+        bins = chunks.magnitude
 
         # Perform bound check
-        out_bound = (values < chunks.min()) | (values > chunks.max())
+        out_bound = (values < bins.min()) | (values > bins.max())
         if np.any(out_bound):
             # TODO: handle this error better?
             raise ValueError("out-of-bound spectral coordinate value")
 
-        indexes = np.digitize(values.m_as(chunks.units), bins=chunks.magnitude) - 1
-        return list(self._index["filename"].iloc[indexes])
+        indexes = np.digitize(values, bins=bins) - 1
+        return self._filenames[indexes].tolist()
 
     def lookup_datasets(self, /, **kwargs) -> list[xr.Dataset]:
         """
@@ -818,6 +838,15 @@ class AbsorptionDatabase:
             )
             fill_value[dim] = (lower_fill, upper_fill)
 
+        coords = {
+            name: xr.Variable(var.dims, var.values, var.attrs)
+            for name, var in ds["sigma_a"].coords.variables.items()
+        }
+        grid_bounds = {
+            dim: (coords[dim].values.min(), coords[dim].values.max())
+            for dim, _ in bounds_checks
+        }
+
         plan = _ThermophysicalPlan(
             x_ds=x_ds,
             x_ds_scalar=x_ds_scalar,
@@ -826,13 +855,15 @@ class AbsorptionDatabase:
             bounds_checks=bounds_checks,
             bounds=bounds,
             fill_value=fill_value,
+            coords=coords,
+            grid_bounds=grid_bounds,
         )
         self._thermophysical_plan_cache[key] = plan
         return plan
 
     @staticmethod
     def _check_thermophysical_bounds(
-        ds: xr.Dataset,
+        grid_bounds: Mapping[Hashable, tuple[float, float]],
         coords: dict[Hashable, xr.DataArray],
         bounds_checks: list[tuple[Hashable, ErrorHandlingPolicy]],
     ) -> None:
@@ -842,8 +873,9 @@ class AbsorptionDatabase:
 
         Parameters
         ----------
-        ds : Dataset
-            The dataset providing the reference grid for each dimension.
+        grid_bounds : mapping
+            Mapping of dimension name to the (min, max) of the dataset grid
+            along that dimension, as stored in :meth:`_thermophysical_plan`.
 
         coords : dict
             Mapping of dimension name to the query values (thermophysical
@@ -859,9 +891,9 @@ class AbsorptionDatabase:
             query_vals = np.atleast_1d(
                 coords[dim].values if hasattr(coords[dim], "values") else coords[dim]
             )
-            grid_vals = ds[dim].values
-            below = query_vals < grid_vals.min()
-            above = query_vals > grid_vals.max()
+            grid_min, grid_max = grid_bounds[dim]
+            below = query_vals < grid_min
+            above = query_vals > grid_max
 
             # Check lower bound
             if np.any(below) and lower_policy.action is not ErrorHandlingAction.IGNORE:
@@ -885,13 +917,13 @@ class AbsorptionDatabase:
 
     def _interp_thermophysical(
         self,
-        ds: xr.Dataset,
+        plan: _ThermophysicalPlan,
         da: xr.DataArray,
         thermoprops: xr.Dataset,
-        error_handling_config: ErrorHandlingConfiguration,
-    ) -> tuple[xr.DataArray, list[Hashable]]:
-        plan = self._thermophysical_plan(ds, thermoprops, error_handling_config)
-
+    ) -> xr.DataArray:
+        """
+        DataArray-in/DataArray-out sibling of :meth:`_interp_thermophysical_raw`.
+        """
         # Select on scalar coordinates and missing concentrations
         result = da.isel(**dict.fromkeys(plan.x_ds_scalar + list(plan.x_missing), 0))
 
@@ -901,32 +933,57 @@ class AbsorptionDatabase:
         for x in plan.x_ds_array:
             coords[x] = thermoprops[x]
 
-        self._check_thermophysical_bounds(ds, coords, plan.bounds_checks)
+        self._check_thermophysical_bounds(plan.grid_bounds, coords, plan.bounds_checks)
 
         # Perform interpolation
-        result = interp_dataarray(
+        return interp_dataarray(
             result, coords, bounds=plan.bounds, fill_value=plan.fill_value
         )
 
-        return result, plan.x_ds
-
     def _interp_thermophysical_raw(
         self,
-        ds: xr.Dataset,
+        plan: _ThermophysicalPlan,
         data: np.ndarray,
         dims: list[Hashable],
-        old_coords: Mapping[Hashable, xr.DataArray],
+        old_coords: Mapping[Hashable, xr.Variable | xr.DataArray],
         thermoprops: xr.Dataset,
-        error_handling_config: ErrorHandlingConfiguration,
-    ) -> tuple[np.ndarray, list[Hashable], dict, list[Hashable]]:
+    ) -> tuple[np.ndarray, list[Hashable], dict]:
         """
-        Raw-numpy sibling of :meth:`_interp_thermophysical`: same bounds
-        checks and interpolation plan, but takes/returns plain numpy data
-        instead of an ``xr.DataArray``, so callers can defer DataArray
-        construction until the end of a longer pipeline.
-        """
-        plan = self._thermophysical_plan(ds, thermoprops, error_handling_config)
+        Interpolate raw ``sigma_a`` data on the thermophysical profile.
 
+        Takes and returns plain numpy data instead of an ``xr.DataArray``, so
+        callers can defer DataArray construction until the end of a longer
+        pipeline.
+
+        Parameters
+        ----------
+        plan : _ThermophysicalPlan
+            Interpolation plan returned by :meth:`_thermophysical_plan`.
+
+        data : ndarray
+            Data to interpolate. Never modified in place.
+
+        dims : list of Hashable
+            Dimension names of ``data``.
+
+        old_coords : mapping
+            Coordinates of ``data`` (typically ``plan.coords``, with any
+            dimension already interpolated by the caller replaced).
+
+        thermoprops : Dataset
+            Thermophysical profile.
+
+        Returns
+        -------
+        data : ndarray
+            Interpolated data.
+
+        dims : list of Hashable
+            Dimension names of the returned data.
+
+        out_coords : dict
+            Coordinates of the returned data.
+        """
         # Select on scalar coordinates and missing concentrations
         iselect = plan.x_ds_scalar + list(plan.x_missing)
         if iselect:
@@ -941,10 +998,10 @@ class AbsorptionDatabase:
         for x in plan.x_ds_array:
             coords[x] = thermoprops[x]
 
-        self._check_thermophysical_bounds(ds, coords, plan.bounds_checks)
+        self._check_thermophysical_bounds(plan.grid_bounds, coords, plan.bounds_checks)
 
         # Perform interpolation
-        data, dims, out_coords = _interp_core(
+        return _interp_core(
             data,
             dims,
             old_coords,
@@ -952,8 +1009,6 @@ class AbsorptionDatabase:
             bounds=plan.bounds,
             fill_value=plan.fill_value,
         )
-
-        return data, dims, out_coords, plan.x_ds
 
 
 @attrs.define(repr=False, eq=False)
@@ -1025,20 +1080,19 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
 
         # Lookup dataset
         ds = self._resolve_dataset(w)
+        plan = self._thermophysical_plan(ds, thermoprops, error_handling_config)
 
         # Interpolate on spectral dimension
-        w_u = parse_units(ds["w"].units)
+        w_u = parse_units(plan.coords["w"].attrs["units"])
         # Note: Support for wavenumber spectral lookup mode is suboptimal
         w_m = (1.0 / w).m_as(w_u) if w_u.check("[length]^-1") else w.m_as(w_u)
         result = ds["sigma_a"].interp(w=w_m, method="linear")
 
         # Interpolate on thermophysical dimensions
-        result, x_ds = self._interp_thermophysical(
-            ds, result, thermoprops, error_handling_config
-        )
+        result = self._interp_thermophysical(plan, result, thermoprops)
 
         # Drop thermophysical coordinates, ensure spectral dimension
-        result = result.drop_vars(["p", "t", *x_ds], errors="ignore")
+        result = result.drop_vars(["p", "t", *plan.x_ds], errors="ignore")
         if "w" not in result.dims:
             result = result.expand_dims("w")
 
@@ -1125,18 +1179,20 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
 
         # Lookup dataset
         ds = self._resolve_dataset(w)
+        plan = self._thermophysical_plan(ds, thermoprops, error_handling_config)
+        w_var = plan.coords["w"]
 
         # Select bin. Stays on raw numpy throughout (instead of
         # ds["sigma_a"].sel(w=w_m, method="nearest") plus two more
         # DataArray-in/DataArray-out interpolation steps below) so only one
         # xr.DataArray is constructed, at the very end of this method.
         # Only scalar/length-1 w is supported (matches all current usage).
-        w_u = parse_units(ds["w"].units)
+        w_u = parse_units(w_var.attrs["units"])
         w_m = np.atleast_1d(w.m_as(w_u))
         assert w_m.size == 1, "eval_sigma_a_ckd only supports scalar/length-1 w"
         w_m = w_m[0]
 
-        w_vals = ds["w"].values
+        w_vals = w_var.values
         n = w_vals.size
         if n == 1:
             w_idx = 0
@@ -1154,10 +1210,6 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
             w_idx = int(left_idx[0]) + (1 if weight[0] >= 0.5 else 0)
 
         sigma_a = ds["sigma_a"]
-        # The matched grid coordinate (not the raw query value), matching
-        # xr.DataArray.sel(method="nearest")'s behaviour: it labels the
-        # result with the grid point it actually selected.
-        w_coord = sigma_a.coords["w"].isel(w=w_idx)
         w_axis = sigma_a.dims.index("w")
         # np.take always copies, never a view: `data` must never alias
         # ds["sigma_a"].values, since it's LRU-cached and reused across
@@ -1169,20 +1221,22 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
         # uses the package's fast interpolation helper instead of
         # DataArray.interp(), which pays for a generic sortby/align pass on
         # every call.
-        data, dims, _ = _interp_core(data, dims, sigma_a.coords, {"g": g})
+        data, dims, _ = _interp_core(data, dims, plan.coords, {"g": g})
 
         # Interpolate on thermophysical dimensions
-        data, dims, out_coords, x_ds = self._interp_thermophysical_raw(
-            ds, data, dims, sigma_a.coords, thermoprops, error_handling_config
+        data, dims, out_coords = self._interp_thermophysical_raw(
+            plan, data, dims, plan.coords, thermoprops
         )
 
-        # Drop thermophysical coordinates, ensure spectral dimension
-        for name in ("p", "t", *x_ds):
+        # Drop thermophysical coordinates, ensure spectral dimension. The
+        # spectral coordinate is the matched grid point (not the raw query
+        # value), like xr.DataArray.sel(method="nearest") would give.
+        for name in ("p", "t", *plan.x_ds):
             out_coords.pop(name, None)
         if "w" not in dims:
             dims = ["w", *dims]
             data = data[np.newaxis, ...]
-        out_coords["w"] = ("w", np.array([w_coord.values]), dict(w_coord.attrs))
+        out_coords["w"] = ("w", w_vals[w_idx : w_idx + 1], w_var.attrs)
 
         assert set(dims) == {"w", "z"}
         data = data.transpose(dims.index("w"), dims.index("z"))

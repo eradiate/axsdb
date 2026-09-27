@@ -86,7 +86,7 @@ Everything lives in `src/axsdb/`, a small, flat module layout:
   (`lookup_filenames`/`lookup_datasets`) maps a wavelength or wavenumber
   query onto the file(s) that cover it, using a precomputed digitize-able
   mesh stored in `_chunks`. Loaded dataset objects are LRU-cached
-  (`cachetools`, default size 8), and can be opened either lazily or eagerly
+  (`cachetools`, default size 16), and can be opened either lazily or eagerly
   (`xr.open_dataset` vs. `xr.load_dataset`) via the `lazy` flag.
 
 - **`error.py`** implements configurable error handling for interpolation
