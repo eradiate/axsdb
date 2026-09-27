@@ -1,4 +1,6 @@
-# Release notes
+# AxsDB — Changelog
+
+---
 
 ## AxsDB 0.2.0 (*upcoming release*)
 

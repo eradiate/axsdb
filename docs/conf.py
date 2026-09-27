@@ -59,6 +59,14 @@ autodoc_default_options = {
     "show-inheritance": True,
 }
 
+# -- MyST / MyST-NB ------------------------------------------------------------
+
+myst_enable_extensions = ["colon_fence", "deflist", "dollarmath"]
+myst_heading_anchors = 3
+
+# changelog.rst includes CHANGELOG.md past its H1, so the included text starts at H2.
+suppress_warnings = ["myst.header"]
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 

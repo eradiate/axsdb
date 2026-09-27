@@ -19,6 +19,24 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
 
         Read about AxsDB and its API.
 
+    .. grid-item-card:: :iconify:`material-symbols:description height=1.5em` API reference
+        :link: api/axsdb
+        :link-type: doc
+
+        Browse the API reference.
+
+    .. grid-item-card:: :iconify:`material-symbols:code height=1.5em` Developer guide
+        :link: dev/installation
+        :link-type: doc
+
+        Contribute to and maintain AxsDB.
+
+    .. grid-item-card:: :iconify:`mdi:clock height=1.5em` Changelog
+        :link: changelog
+        :link-type: doc
+
+        Release history.
+
     .. grid-item-card:: :iconify:`simple-icons:github height=1.5em` GitHub
         :link: https://github.com/eradiate/axsdb/
 
@@ -32,7 +50,6 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
     getting_started
     formats
     error_handling
-    Release notes <release_notes>
 
 .. toctree::
     :maxdepth: 2
@@ -51,3 +68,10 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
     dev/interpolation
     Typing <dev/typing>
     dev/release
+
+.. toctree::
+    :maxdepth: 2
+    :hidden:
+    :caption: About
+
+    changelog
