@@ -146,22 +146,21 @@ class TestCKDAbsorptionDatabase:
             absorption_database_error_handler_config
         )
         ds = absdb_ckd.load_dataset("nanockd_v1-345_355.nc")
+        plan = absdb_ckd._thermophysical_plan(
+            ds, thermoprops_us_standard, error_handling_config
+        )
         da = ds["sigma_a"].sel(w=350.0, method="nearest")
 
-        expected, expected_x_ds = absdb_ckd._interp_thermophysical(
-            ds, da, thermoprops_us_standard, error_handling_config
-        )
+        expected = absdb_ckd._interp_thermophysical(plan, da, thermoprops_us_standard)
 
-        data, dims, out_coords, x_ds = absdb_ckd._interp_thermophysical_raw(
-            ds,
+        data, dims, out_coords = absdb_ckd._interp_thermophysical_raw(
+            plan,
             da.values,
             list(da.dims),
             da.coords,
             thermoprops_us_standard,
-            error_handling_config,
         )
 
-        assert x_ds == expected_x_ds
         assert dims == list(expected.dims)
         np.testing.assert_array_equal(data, expected.values)
         assert set(out_coords) == set(expected.coords)
