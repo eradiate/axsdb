@@ -275,7 +275,7 @@ class AbsorptionDatabase:
 
     @staticmethod
     def _make_spectral_coverage(filenames: list[PathLike]) -> pd.DataFrame:
-        ureg = get_unit_registry
+        ureg = get_unit_registry()
 
         with xr.open_dataset(filenames[0]) as ds:
             dims = set(ds.dims)
@@ -292,7 +292,7 @@ class AbsorptionDatabase:
 
         index = []
         headers = ["wbound_lower [nm]", "wbound_upper [nm]"]
-        rows = None
+        rows = []
 
         for filename in filenames:
             filename = Path(filename)
@@ -317,20 +317,13 @@ class AbsorptionDatabase:
 
             index.extend([(filename.name, x) for x in w])
 
-            if rows is None:
-                rows = np.stack((wbounds_lower, wbounds_upper), axis=1)
-            else:
-                rows = np.concatenate(
-                    (
-                        rows,
-                        np.stack((wbounds_lower, wbounds_upper), axis=1),
-                    ),
-                    axis=0,
-                )
+            rows.append(np.stack((wbounds_lower, wbounds_upper), axis=1))
 
         index = pd.MultiIndex.from_tuples(index, names=["filename", "wavelength [nm]"])
         # Sort index by wavelength
-        result = pd.DataFrame(rows, index=index, columns=headers).sort_index(level=1)
+        result = pd.DataFrame(
+            np.concatenate(rows, axis=0), index=index, columns=headers
+        ).sort_index(level=1)
         return result
 
     @classmethod

@@ -1,4 +1,7 @@
+import shutil
+
 import numpy as np
+import pandas as pd
 import pytest
 
 import axsdb
@@ -7,6 +10,7 @@ from axsdb import (
     ErrorHandlingConfiguration,
     MonoAbsorptionDatabase,
 )
+from axsdb.core import get_absdb_type
 from axsdb.error import ErrorHandlingAction, InterpolationError
 from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import get_unit_registry
@@ -317,3 +321,21 @@ def test_bounds_clamp_mode(absdb, thermoprops_us_standard):
     assert np.any(result_fill.values == fill_sentinel)
     # Clamping must never leak the raw fill sentinel.
     assert not np.any(result_clamp.values == fill_sentinel)
+
+
+@pytest.mark.parametrize("mode", ["mono", "ckd"])
+def test_rebuild_spectral_coverage(mode, shared_datadir, tmp_path):
+    # A missing spectral coverage table is rebuilt from the data files and
+    # matches the one shipped with the test data
+    src = shared_datadir / f"nano{mode}_v1"
+    dst = tmp_path / src.name
+    shutil.copytree(src, dst)
+    (dst / "spectral.csv").unlink()
+
+    cls = get_absdb_type(mode)
+    cls.from_directory(dst, fix=True)
+    assert (dst / "spectral.csv").is_file()
+
+    rebuilt = cls.from_directory(dst, fix=False).spectral_coverage
+    expected = cls.from_directory(src, fix=False).spectral_coverage
+    pd.testing.assert_frame_equal(rebuilt, expected, check_exact=False)
