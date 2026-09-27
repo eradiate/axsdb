@@ -166,6 +166,36 @@ class TestCKDAbsorptionDatabase:
         assert set(out_coords) == set(expected.coords)
 
 
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_eval_does_not_modify_cached_data(absdb, thermoprops_us_standard):
+    # The CKD path interpolates on a view of the cached dataset: make sure
+    # that no step writes into it, including when fill values are applied.
+    config = {
+        dim: {
+            "missing": "ignore",
+            "scalar": "ignore",
+            "bounds": {"action": "ignore", "mode": "fill", "fill_value": 7.0},
+        }
+        for dim in ["x", "p", "t"]
+    }
+    ds = absdb.load_dataset(absdb.lookup_filenames(wl=350.0 * ureg.nm)[0])
+    before = ds["sigma_a"].values.copy()
+    result = _eval(absdb, thermoprops_us_standard, config)
+    assert np.any(result.values == 7.0)  # Fill values were applied
+    np.testing.assert_array_equal(ds["sigma_a"].values, before)
+
+
+@pytest.mark.parametrize("mode", ["mono", "ckd"])
+def test_eval_lazy_reads_subset(mode, shared_datadir, thermoprops_us_standard):
+    # In lazy mode, evaluation must not load the whole data variable
+    absdb = get_absdb_type(mode).from_directory(
+        shared_datadir / f"nano{mode}_v1", lazy=True, fix=False
+    )
+    _eval(absdb, thermoprops_us_standard, absdb.error_handling_config)
+    ds = absdb.load_dataset(absdb.lookup_filenames(wl=350.0 * ureg.nm)[0])
+    assert not ds["sigma_a"].variable._in_memory
+
+
 def test_cache_clear(absdb_ckd):
     # Make a query to ensure that the cache is filling up
     absdb_ckd.load_dataset("nanockd_v1-345_355.nc")
