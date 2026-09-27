@@ -5,6 +5,10 @@
 ## AxsDB 0.2.0 (*upcoming release*)
 
 * Exposed `units` module as public API ({ghpr}`17`).
+* Reduced the per-call overhead of `eval_sigma_a_mono()` and
+  `eval_sigma_a_ckd()`: the coordinate grids of each data file are now stored
+  with the cached interpolation plan instead of being read through xarray on
+  every call.
 * Fixed the rebuild of a missing `spectral.csv` file, which always failed with
   a `TypeError`.
 
