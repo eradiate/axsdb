@@ -99,11 +99,17 @@ class BenchInterpDataArrayThermophysical:
                 result = result.interp({dim: coords}, **interp_kwargs)
 
     def bench_time_xarray_sequential(self, setup, benchmark):
-        benchmark(
+        # xarray reference is orders of magnitude slower:
+        # single round and iterations, skip at larger profile size
+
+        if setup["thermoprops"].sizes["z"] > 121:
+            pytest.skip("xarray reference too slow")
+
+        benchmark.pedantic(
             self.time_xarray_sequential,
-            setup["da"],
-            setup["dims_coords"],
-            setup["interp_kwargs"],
+            args=(setup["da"], setup["dims_coords"], setup["interp_kwargs"]),
+            rounds=1,
+            iterations=1,
         )
 
     def time_xarray_multi(self, da, dims_coords, interp_kwargs):
