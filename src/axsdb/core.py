@@ -1209,19 +1209,24 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
             left_idx, weight = lerp_indices(w_vals, np.array([w_m]), bounds="clamp")
             w_idx = int(left_idx[0]) + (1 if weight[0] >= 0.5 else 0)
 
-        sigma_a = ds["sigma_a"]
-        w_axis = sigma_a.dims.index("w")
-        # np.take always copies, never a view: `data` must never alias
-        # ds["sigma_a"].values, since it's LRU-cached and reused across
-        # calls, and later steps may mutate `data` in place for fill values.
-        data = np.take(sigma_a.values, w_idx, axis=w_axis)
+        # Select the spectral bin and the two g-points that bracket g (or the
+        # first two, if g is out of bounds). This is basic indexing: in eager
+        # mode, the result is a view of the cached array (no copy); in lazy
+        # mode, only this subset is read from disk. The view is safe because
+        # _interp_core never modifies its input in place.
+        sigma_a = ds.variables["sigma_a"]
+        g_vals = plan.coords["g"].values
+        g_left = int(lerp_indices(g_vals, np.array([g]))[0][0])
+        g_slice = slice(g_left, g_left + 2)
+        data = sigma_a.isel(w=w_idx, g=g_slice).values
         dims = [d for d in sigma_a.dims if d != "w"]
 
         # Interpolate along g. `g` is a small, sorted, static grid, so this
         # uses the package's fast interpolation helper instead of
         # DataArray.interp(), which pays for a generic sortby/align pass on
         # every call.
-        data, dims, _ = _interp_core(data, dims, plan.coords, {"g": g})
+        g_coords = {"g": xr.Variable(("g",), g_vals[g_slice])}
+        data, dims, _ = _interp_core(data, dims, g_coords, {"g": g})
 
         # Interpolate on thermophysical dimensions
         data, dims, out_coords = self._interp_thermophysical_raw(
@@ -1246,7 +1251,7 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
             data,
             dims=dims,
             coords=out_coords,
-            name=sigma_a.name,
+            name="sigma_a",
             attrs=sigma_a.attrs,
         )
 

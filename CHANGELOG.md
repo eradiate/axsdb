@@ -9,6 +9,10 @@
   `eval_sigma_a_ckd()`: the coordinate grids of each data file are now stored
   with the cached interpolation plan instead of being read through xarray on
   every call.
+* `CKDAbsorptionDatabase.eval_sigma_a_ckd()` no longer copies the selected
+  spectral bin on every call: only the bin and the two g-points bracketing the
+  query are read. In lazy mode, it no longer loads the entire `sigma_a`
+  variable into memory on the first call.
 * Fixed the rebuild of a missing `spectral.csv` file, which always failed with
   a `TypeError`.
 
