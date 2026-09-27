@@ -121,7 +121,7 @@ source = ["src/"]
 minversion = "6"
 log_level = "INFO"
 xfail_strict = true
-filterwarnings = ["error"]
+filterwarnings = ["error", "ignore:numpy.ndarray size changed:RuntimeWarning"]
 addopts = [
   "-ra",
   "-vv",
