@@ -27,7 +27,7 @@ from .error import (
     get_error_handling_config,
     handle_error,
 )
-from .interpolation import _interp_core, interp_dataarray
+from .interpolation import _interp_core
 from .math import lerp_indices
 from .typing import PathLike
 from .units import ensure_units, get_unit_registry, parse_units, xarray_to_quantity
@@ -74,6 +74,46 @@ class _ThermophysicalPlan(NamedTuple):
 
     #: (min, max) of the dataset grid for each dimension in ``bounds_checks``.
     grid_bounds: dict[Hashable, tuple[float, float]]
+
+
+def _bracket_indices(
+    grid: np.ndarray, query: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Find the grid points that bracket each query point, for linear
+    interpolation on a monotonic (ascending or descending) grid.
+
+    Parameters
+    ----------
+    grid : ndarray
+        Monotonic 1-D grid.
+
+    query : ndarray
+        1-D query points.
+
+    Returns
+    -------
+    i0, i1 : ndarray
+        Integer indices of the bracketing grid points, such that the
+        interpolated value is ``y[i0] + weight * (y[i1] - y[i0])``.
+
+    weight : ndarray
+        Interpolation weights. NaN for query points outside of the grid.
+    """
+    n = grid.size
+    if n == 1:
+        i0 = np.zeros(query.size, dtype=np.intp)
+        weight = np.where(query == grid[0], 0.0, np.nan)
+        return i0, i0, weight
+
+    descending = grid[0] > grid[-1]
+    left, weight = lerp_indices(grid[::-1] if descending else grid, query)
+    left = left.astype(np.intp)
+    if descending:
+        # Map indices on the reversed grid back to the original grid
+        i0 = n - 1 - left
+        return i0, i0 - 1, weight
+    return left, left + 1, weight
 
 
 @attrs.define(slots=False, repr=False, eq=False)
@@ -915,31 +955,6 @@ class AbsorptionDatabase:
                     upper_policy.action,
                 )
 
-    def _interp_thermophysical(
-        self,
-        plan: _ThermophysicalPlan,
-        da: xr.DataArray,
-        thermoprops: xr.Dataset,
-    ) -> xr.DataArray:
-        """
-        DataArray-in/DataArray-out sibling of :meth:`_interp_thermophysical_raw`.
-        """
-        # Select on scalar coordinates and missing concentrations
-        result = da.isel(**dict.fromkeys(plan.x_ds_scalar + list(plan.x_missing), 0))
-
-        # Build interpolation parameters
-        coords = {"t": thermoprops["t"], "p": thermoprops["p"]}
-
-        for x in plan.x_ds_array:
-            coords[x] = thermoprops[x]
-
-        self._check_thermophysical_bounds(plan.grid_bounds, coords, plan.bounds_checks)
-
-        # Perform interpolation
-        return interp_dataarray(
-            result, coords, bounds=plan.bounds, fill_value=plan.fill_value
-        )
-
     def _interp_thermophysical_raw(
         self,
         plan: _ThermophysicalPlan,
@@ -1081,22 +1096,54 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
         # Lookup dataset
         ds = self._resolve_dataset(w)
         plan = self._thermophysical_plan(ds, thermoprops, error_handling_config)
+        sigma_a = ds.variables["sigma_a"]
+        w_var = plan.coords["w"]
 
         # Interpolate on spectral dimension
-        w_u = parse_units(plan.coords["w"].attrs["units"])
+        w_u = parse_units(w_var.attrs["units"])
         # Note: Support for wavenumber spectral lookup mode is suboptimal
-        w_m = (1.0 / w).m_as(w_u) if w_u.check("[length]^-1") else w.m_as(w_u)
-        result = ds["sigma_a"].interp(w=w_m, method="linear")
+        w_m = np.atleast_1d(
+            (1.0 / w).m_as(w_u) if w_u.check("[length]^-1") else w.m_as(w_u)
+        ).astype(np.float64)
+        i0, i1, weights = _bracket_indices(w_var.values, w_m)
+
+        # Read only the range of spectral slices that bracket the query
+        # points (basic indexing: in eager mode, a view of the cached array;
+        # in lazy mode, all that is read from disk), then gather the
+        # bracketing slices. Linear interpolation (NaN outside of the grid)
+        # is then done with a single allocation.
+        m = w_m.size
+        w_axis = sigma_a.dims.index("w")
+        i_min = min(i0.min(), i1.min())
+        i_max = max(i0.max(), i1.max())
+        y = sigma_a.isel(w=slice(i_min, i_max + 1)).values
+        y0 = np.take(y, i0 - i_min, axis=w_axis)
+        y1 = np.take(y, i1 - i_min, axis=w_axis)
+        data = np.subtract(y1, y0, dtype=np.float64)
+        data *= weights.reshape([m if i == w_axis else 1 for i in range(y.ndim)])
+        data += y0
 
         # Interpolate on thermophysical dimensions
-        result = self._interp_thermophysical(plan, result, thermoprops)
+        old_coords = dict(plan.coords)
+        old_coords["w"] = xr.Variable(("w",), w_m, w_var.attrs)
+        data, dims, out_coords = self._interp_thermophysical_raw(
+            plan, data, list(sigma_a.dims), old_coords, thermoprops
+        )
 
-        # Drop thermophysical coordinates, ensure spectral dimension
-        result = result.drop_vars(["p", "t", *plan.x_ds], errors="ignore")
-        if "w" not in result.dims:
-            result = result.expand_dims("w")
+        # Drop thermophysical coordinates
+        for name in ("p", "t", *plan.x_ds):
+            out_coords.pop(name, None)
 
-        return result.transpose("w", "z")
+        assert set(dims) == {"w", "z"}
+        data = data.transpose(dims.index("w"), dims.index("z"))
+
+        return xr.DataArray(
+            data,
+            dims=["w", "z"],
+            coords=out_coords,
+            name="sigma_a",
+            attrs=sigma_a.attrs,
+        )
 
 
 @attrs.define(repr=False, eq=False)
