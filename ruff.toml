@@ -1,6 +1,15 @@
 include = ["src/**/*.py", "tests/**/*.py"]
 
 [lint]
-select = ["E", "F", "I", "B", "C4", "SIM", "PIE", "UP", "PERF", "NPY", "RUF"]
+select = ["E", "F", "I", "B", "C4", "FA", "SIM", "PIE", "UP", "PERF", "NPY", "RUF", "TID251"]
 exclude = ["tests/examples/example_*.py", "docs/examples/*.ipynb"]
 allowed-confusables = ["×"]
+
+# ponytail: UP035 skips these at py39; drop once requires-python >= 3.10
+[lint.flake8-tidy-imports.banned-api]
+"typing.Callable".msg = "Use collections.abc.Callable"
+"typing.Hashable".msg = "Use collections.abc.Hashable"
+"typing.Iterable".msg = "Use collections.abc.Iterable"
+"typing.Iterator".msg = "Use collections.abc.Iterator"
+"typing.Mapping".msg = "Use collections.abc.Mapping"
+"typing.Sequence".msg = "Use collections.abc.Sequence"

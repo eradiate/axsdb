@@ -66,7 +66,6 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
     dev/installation
     dev/benchmarking
     dev/interpolation
-    Typing <dev/typing>
     dev/release
 
 .. toctree::
