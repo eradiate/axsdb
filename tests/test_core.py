@@ -1,4 +1,7 @@
+import shutil
+
 import numpy as np
+import pandas as pd
 import pytest
 
 import axsdb
@@ -7,7 +10,9 @@ from axsdb import (
     ErrorHandlingConfiguration,
     MonoAbsorptionDatabase,
 )
+from axsdb.core import _bracket_indices, get_absdb_type
 from axsdb.error import ErrorHandlingAction, InterpolationError
+from axsdb.interpolation import interp_dataarray
 from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import get_unit_registry
 
@@ -136,31 +141,86 @@ class TestCKDAbsorptionDatabase:
         absorption_database_error_handler_config,
     ):
         # _interp_thermophysical_raw (numpy in/out) must produce the exact
-        # same result as _interp_thermophysical (DataArray in/out) for the
-        # same inputs.
+        # same result as the public interp_dataarray (DataArray in/out) with
+        # the same interpolation plan.
         error_handling_config = ErrorHandlingConfiguration.convert(
             absorption_database_error_handler_config
         )
         ds = absdb_ckd.load_dataset("nanockd_v1-345_355.nc")
+        plan = absdb_ckd._thermophysical_plan(
+            ds, thermoprops_us_standard, error_handling_config
+        )
         da = ds["sigma_a"].sel(w=350.0, method="nearest")
 
-        expected, expected_x_ds = absdb_ckd._interp_thermophysical(
-            ds, da, thermoprops_us_standard, error_handling_config
+        expected = interp_dataarray(
+            da.isel(**dict.fromkeys(plan.x_ds_scalar + list(plan.x_missing), 0)),
+            {
+                "t": thermoprops_us_standard["t"],
+                "p": thermoprops_us_standard["p"],
+                **{x: thermoprops_us_standard[x] for x in plan.x_ds_array},
+            },
+            bounds=plan.bounds,
+            fill_value=plan.fill_value,
         )
 
-        data, dims, out_coords, x_ds = absdb_ckd._interp_thermophysical_raw(
-            ds,
+        data, dims, out_coords = absdb_ckd._interp_thermophysical_raw(
+            plan,
             da.values,
             list(da.dims),
             da.coords,
             thermoprops_us_standard,
-            error_handling_config,
         )
 
-        assert x_ds == expected_x_ds
         assert dims == list(expected.dims)
         np.testing.assert_array_equal(data, expected.values)
         assert set(out_coords) == set(expected.coords)
+
+
+@pytest.mark.parametrize(
+    "grid",
+    [np.array([1.0, 2.0, 4.0, 8.0]), np.array([8.0, 4.0, 2.0, 1.0])],
+    ids=["ascending", "descending"],
+)
+def test_bracket_indices(grid):
+    y = np.array([3.0, -1.0, 5.0, 2.0])
+    query = np.array([0.5, 1.0, 1.5, 2.0, 3.0, 7.9, 8.0, 9.0])
+    i0, i1, weights = _bracket_indices(grid, query)
+    result = y[i0] + weights * (y[i1] - y[i0])
+
+    # np.interp requires an ascending grid
+    order = np.argsort(grid)
+    expected = np.interp(query, grid[order], y[order], left=np.nan, right=np.nan)
+    np.testing.assert_allclose(result, expected)
+
+
+@pytest.mark.parametrize("absdb", ["mono", "ckd"], indirect=True)
+def test_eval_does_not_modify_cached_data(absdb, thermoprops_us_standard):
+    # The CKD path interpolates on a view of the cached dataset: make sure
+    # that no step writes into it, including when fill values are applied.
+    config = {
+        dim: {
+            "missing": "ignore",
+            "scalar": "ignore",
+            "bounds": {"action": "ignore", "mode": "fill", "fill_value": 7.0},
+        }
+        for dim in ["x", "p", "t"]
+    }
+    ds = absdb.load_dataset(absdb.lookup_filenames(wl=350.0 * ureg.nm)[0])
+    before = ds["sigma_a"].values.copy()
+    result = _eval(absdb, thermoprops_us_standard, config)
+    assert np.any(result.values == 7.0)  # Fill values were applied
+    np.testing.assert_array_equal(ds["sigma_a"].values, before)
+
+
+@pytest.mark.parametrize("mode", ["mono", "ckd"])
+def test_eval_lazy_reads_subset(mode, shared_datadir, thermoprops_us_standard):
+    # In lazy mode, evaluation must not load the whole data variable
+    absdb = get_absdb_type(mode).from_directory(
+        shared_datadir / f"nano{mode}_v1", lazy=True, fix=False
+    )
+    _eval(absdb, thermoprops_us_standard, absdb.error_handling_config)
+    ds = absdb.load_dataset(absdb.lookup_filenames(wl=350.0 * ureg.nm)[0])
+    assert not ds["sigma_a"].variable._in_memory
 
 
 def test_cache_clear(absdb_ckd):
@@ -317,3 +377,21 @@ def test_bounds_clamp_mode(absdb, thermoprops_us_standard):
     assert np.any(result_fill.values == fill_sentinel)
     # Clamping must never leak the raw fill sentinel.
     assert not np.any(result_clamp.values == fill_sentinel)
+
+
+@pytest.mark.parametrize("mode", ["mono", "ckd"])
+def test_rebuild_spectral_coverage(mode, shared_datadir, tmp_path):
+    # A missing spectral coverage table is rebuilt from the data files and
+    # matches the one shipped with the test data
+    src = shared_datadir / f"nano{mode}_v1"
+    dst = tmp_path / src.name
+    shutil.copytree(src, dst)
+    (dst / "spectral.csv").unlink()
+
+    cls = get_absdb_type(mode)
+    cls.from_directory(dst, fix=True)
+    assert (dst / "spectral.csv").is_file()
+
+    rebuilt = cls.from_directory(dst, fix=False).spectral_coverage
+    expected = cls.from_directory(src, fix=False).spectral_coverage
+    pd.testing.assert_frame_equal(rebuilt, expected, check_exact=False)
