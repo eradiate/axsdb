@@ -1,5 +1,6 @@
 # AxsDB — The Eradiate Absorption Cross-section Database Interface
 
+<!-- badges-start -->
 [![pypi][pypi-badge]][pypi-url]
 [![ci][ci-badge]][ci-url]
 [![docs][docs-badge]][docs-url]
@@ -10,6 +11,7 @@
 [ci-url]: https://github.com/eradiate/axsdb/actions/workflows/test.yml
 [docs-badge]: https://img.shields.io/readthedocs/axsdb?style=flat-square
 [docs-url]: https://axsdb.readthedocs.io
+<!-- badges-end -->
 
 This library provides an interface to read and query the absorption databases
 of the [Eradiate radiative transfer model](https://eradiate.eu).
