@@ -5,19 +5,19 @@
 ## AxsDB 0.2.0 (*upcoming release*)
 
 * Exposed `units` module as public API ({ghpr}`17`).
-* Reduced the per-call overhead of `eval_sigma_a_mono()` and
-  `eval_sigma_a_ckd()`: the coordinate grids of each data file are now stored
-  with the cached interpolation plan instead of being read through xarray on
-  every call.
-* `CKDAbsorptionDatabase.eval_sigma_a_ckd()` no longer copies the selected
-  spectral bin on every call: only the bin and the two g-points bracketing the
-  query are read. In lazy mode, it no longer loads the entire `sigma_a`
-  variable into memory on the first call.
-* Sped up `MonoAbsorptionDatabase.eval_sigma_a_mono()` about 4-fold by
-  replacing `xarray.DataArray.interp()` on the spectral dimension with
-  interpolation between the two bracketing spectral slices.
+* Performance improvements ({ghpr}`20`):
+  * Reduced per-call overhead of `eval_sigma_a_mono()` and `eval_sigma_a_ckd()`:
+    the coordinate grids of each data file are now stored with the cached
+    interpolation plan instead of being read through xarray on every call.
+  * `CKDAbsorptionDatabase.eval_sigma_a_ckd()` no longer copies the selected
+    spectral bin on every call: only the bin and the two g-points bracketing the
+    query are read. In lazy mode, it no longer loads the entire `sigma_a`
+    variable into memory on the first call.
+  * Sped up `MonoAbsorptionDatabase.eval_sigma_a_mono()` about 4× by
+    replacing `xarray.DataArray.interp()` on the spectral dimension with
+    interpolation between the two bracketing spectral slices.
 * Fixed the rebuild of a missing `spectral.csv` file, which always failed with
-  a `TypeError`.
+  a `TypeError` ({ghpr}`20`).
 
 ## AxsDB 0.1.2 (2026-02-18)
 
