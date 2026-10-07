@@ -347,7 +347,9 @@ class AbsorptionDatabase:
             if db_type is None:
                 raise ValueError
 
-            wavenumber_spectral_lookup_mode = ureg(ds["w"].units).check("[length]^-1")
+            wavenumber_spectral_lookup_mode = ureg.Quantity(1.0, ds["w"].units).check(
+                "[length]^-1"
+            )
 
         index = []
         headers = ["wbound_lower [nm]", "wbound_upper [nm]"]
@@ -1048,7 +1050,7 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
         for filename in filenames:
             filename = Path(filename)
             with xr.open_dataset(filename) as ds:
-                w_u = ureg(ds["w"].units)
+                w_u = ureg.Quantity(1.0, ds["w"].units)
 
                 if w_u.check("[length]^-1"):  # wavenumber mode
                     wn_min = float(ds["w"].min()) * w_u
@@ -1061,7 +1063,7 @@ class MonoAbsorptionDatabase(AbsorptionDatabase):
                     wn_min = 1.0 / wl_max
                     wn_max = 1.0 / wl_min
                 else:
-                    raise ValueError(f"Cannot interpret units '{w_u}'")
+                    raise ValueError(f"Cannot interpret units '{w_u.units}'")
 
                 rows.append(
                     [
@@ -1168,7 +1170,7 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
         for filename in filenames:
             filename = Path(filename)
             with xr.open_dataset(filename) as ds:
-                w_u = ureg(ds["w"].units)
+                w_u = ureg.Quantiy(1.0, ds["w"].units)
 
                 if w_u.check("[length]^-1"):  # wavenumber mode
                     wn_min = float(ds["wbounds"].sel(wbv="lower").min()) * w_u
@@ -1181,7 +1183,7 @@ class CKDAbsorptionDatabase(AbsorptionDatabase):
                     wn_min = 1.0 / wl_max
                     wn_max = 1.0 / wl_min
                 else:
-                    raise ValueError(f"Cannot interpret units '{w_u}'")
+                    raise ValueError(f"Cannot interpret units '{w_u.units}'")
 
                 rows.append(
                     [
