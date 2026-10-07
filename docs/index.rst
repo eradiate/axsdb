@@ -1,8 +1,8 @@
 :hide-toc:
 :layout: landing
 
-AxsDB documentation
-===================
+AxsDB
+=====
 
 **Date**: |today| | **Version**: |version|
 
@@ -45,7 +45,7 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
 .. toctree::
     :maxdepth: 2
     :hidden:
-    :caption: Usage
+    :caption: User guide
 
     getting_started
     formats
@@ -61,7 +61,7 @@ of the `Eradiate radiative transfer model <https://eradiate.eu>`_\ .
 .. toctree::
     :maxdepth: 2
     :hidden:
-    :caption: Development
+    :caption: Developer guide
 
     dev/index
     dev/installation

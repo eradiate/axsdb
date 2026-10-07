@@ -1,10 +1,12 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import datetime
+
 import axsdb
 
 project = "axsdb"
-copyright = "2025, Vincent Leroy"
+copyright = f"2025-{datetime.datetime.now().year}, Rayference"
 author = "Vincent Leroy"
 version = axsdb.__version__
 
@@ -72,7 +74,9 @@ suppress_warnings = ["myst.header"]
 
 
 html_static_path = ["_static"]
-html_title = "axsdb"
+html_title = "AxsDB documentation"
+html_short_title = "AxsDB documentation"
+html_favicon = "_images/icon_axsdb.png"
 
 # Use Shibuya theme
 # https://shibuya.lepture.com/
@@ -81,5 +85,11 @@ html_theme_options = {
     "accent_color": "orange",
     "navigation_with_keys": True,
     "github_url": "https://github.com/eradiate/axsdb",
+    "nav_links_align": "center",
+    "nav_links": [
+        {"title": "User guide", "url": "getting_started"},
+        {"title": "API", "url": "api/axsdb"},
+        {"title": "Contributing", "url": "dev/index"},
+    ],
 }
 html_logo = "_static/logo_axsdb.svg"
