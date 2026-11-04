@@ -6,7 +6,7 @@ Installation
 
 Required dependencies:
 
-* Python 3.9 or later
+* Python 3.10 or later
 
 Install from PyPI in your virtual environment:
 

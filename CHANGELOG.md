@@ -22,6 +22,7 @@
   `w` coordinate of a data file is not monotonic (regression in 0.2.0rc1).
   In eager mode, such files are now sorted on load, with a warning; in lazy
   mode, loading them raises a `DataError` ({ghpr}`23`).
+* Python 3.9 support is dropped; Python 3.15 is officially tested and supported.
 
 ## AxsDB 0.1.2 (2026-02-18)
 

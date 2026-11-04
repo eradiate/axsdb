@@ -259,7 +259,7 @@ def _interp_group_with_interpn(
     # Handle bounds mode uniformly
     if bounds_mode == "raise":
         # Pre-validate all dimensions before interpolation
-        for i, (dim, grid) in enumerate(zip(src_dims, grid_points)):
+        for i, (dim, grid) in enumerate(zip(src_dims, grid_points, strict=True)):
             xi_dim = xi[..., i]
             xi_min, xi_max = xi_dim.min(), xi_dim.max()
             grid_min, grid_max = grid[0], grid[-1]
@@ -309,7 +309,7 @@ def _interp_group_with_interpn(
 
         # Post-process per-dimension fill values
         # For each dimension, replace NaN where that dim was OOB
-        for i, (dim, grid) in enumerate(zip(src_dims, grid_points)):
+        for i, (dim, grid) in enumerate(zip(src_dims, grid_points, strict=True)):
             dim_fill_value = fill_value_dict.get(dim, np.nan)
 
             # Skip if fill value is already NaN (no-op)
