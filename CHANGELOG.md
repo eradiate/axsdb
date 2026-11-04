@@ -2,7 +2,7 @@
 
 ---
 
-## AxsDB 0.2.0 (*upcoming release*)
+## AxsDB 0.2.0 (2026-11-04)
 
 * Exposed `units` module as public API ({ghpr}`17`).
 * Performance improvements ({ghpr}`20`):
