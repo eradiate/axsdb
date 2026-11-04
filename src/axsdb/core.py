@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import textwrap
+import warnings
 from collections.abc import Callable, Hashable, Mapping
 from pathlib import Path
 from typing import Any, Literal, NamedTuple
@@ -591,6 +592,11 @@ class AbsorptionDatabase:
         :func:`xarray.load_dataset`; if ``lazy`` is ``True``, files are loaded
         lazily with :func:`xarray.open_dataset`.
 
+        If the ``w`` coordinate is not monotonic, then in eager mode, a warning
+        is emitted and the dataset is sorted by ascending ``w``, which
+        temporarily doubles its memory footprint. Regenerating the file with a
+        sorted ``w`` coordinate avoids this step.
+
         Parameters
         ----------
         fname : str
@@ -599,15 +605,46 @@ class AbsorptionDatabase:
         Returns
         -------
         Dataset
+
+        Raises
+        ------
+        DataError
+            In lazy mode, if the ``w`` coordinate is not monotonic.
         """
         path = self._dir_path / fname
 
         if self.lazy:
             logger.debug("Opening '%s'" % path)  # noqa: UP031
-            return xr.open_dataset(path)
+            ds = xr.open_dataset(path)
         else:
             logger.debug("Loading '%s'" % path)  # noqa: UP031
-            return xr.load_dataset(path)
+            ds = xr.load_dataset(path)
+
+        # Spectral lookup requires a monotonic grid
+        w = ds["w"].values
+        dw = np.diff(w)
+        if not (np.all(dw > 0) or np.all(dw < 0)):
+            if self.lazy:
+                # A lazily sorted view reads one strided slice per w index:
+                # multi-point queries become orders of magnitude slower
+                ds.close()
+                raise DataError(
+                    f"The 'w' coordinate of '{path}' is not sorted, which lazy "
+                    "mode does not support. Use eager mode (lazy=False) or "
+                    "regenerate the file with ascending 'w'."
+                )
+            warnings.warn(
+                f"The 'w' coordinate of '{path}' is not sorted; sorting it on "
+                "load. Regenerate the file with ascending 'w' to skip this "
+                "step.",
+                UserWarning,
+                stacklevel=2,
+            )
+            # isel() makes a single copy (sortby() makes two); the unsorted
+            # data is freed when `ds` is rebound
+            ds = ds.isel(w=np.argsort(w, kind="stable"))
+
+        return ds
 
     def cache_clear(self) -> None:
         """
