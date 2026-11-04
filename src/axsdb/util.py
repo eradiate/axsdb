@@ -20,3 +20,8 @@ class ClosingLRUCache(LRUCache):
         key, ds = super().popitem()
         ds.close()
         return key, ds
+
+    def clear(self):
+        # Recent cachetools versions clear without calling popitem()
+        while self:
+            self.popitem()
