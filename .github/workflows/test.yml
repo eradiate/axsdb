@@ -56,10 +56,10 @@ jobs:
         run: uv python pin ${{ matrix.python-version }}
 
       - name: Install dependencies
-        run: uv sync --group test --all-extras
+        run: uv sync --no-default-groups --group test
 
       - name: Run Tests
-        run: uv run coverage run -m pytest
+        run: uv run --no-sync coverage run -m pytest
 
       - name: Upload coverage data
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
