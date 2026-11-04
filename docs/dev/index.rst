@@ -139,8 +139,8 @@ defined for `Poe the Poet <https://poethepoet.natn.io/>`__::
     uv sync --all-groups --all-extras
     uv run pytest
 
-The supported Python range is 3.9 through 3.14, and 3.9 is the floor the code is
-written against. Intel Mac users need an extra constraint on Numba, see
+The supported Python range is 3.10 through 3.15, and 3.10 is the floor the code
+is written against. Intel Mac users need an extra constraint on Numba, see
 :doc:`installation`.
 
 Dependency groups
@@ -278,11 +278,8 @@ Docstrings
 
 Type hints
     Type hints in every signature. Ruff enforces the modern annotation style
-    (see ``ruff.toml``). Two rules it cannot check: ``X | Y`` is only safe
-    inside annotations (with ``from __future__ import annotations``), and
-    raises ``TypeError`` on Python 3.9 anywhere evaluated at runtime — use
-    ``typing.Union``/``typing.Optional`` there; test functions carry no type
-    annotations.
+    (see ``ruff.toml``). One rule it cannot check: test functions carry no
+    type annotations.
 
 Units
     Units are managed with Pint through ``axsdb.units``. Quantities crossing the
@@ -368,7 +365,7 @@ Continuous integration
 Three workflows:
 
 ``test.yml``
-    The suite across Python 3.9 to 3.14 on Linux, macOS and Windows, on pushes
+    The suite across Python 3.10 to 3.15 on Linux, macOS and Windows, on pushes
     to ``main``, on pull requests, and on manual dispatch. A follow-up job
     combines per-OS coverage data; the path mapping it relies on is in
     ``[tool.coverage.paths]``.

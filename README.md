@@ -32,7 +32,7 @@ of the [Eradiate radiative transfer model](https://eradiate.eu).
 
 ## Installation
 
-Python 3.9 or later is required.
+Python 3.10 or later is required.
 
 ```shell
 pip install axsdb

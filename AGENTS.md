@@ -41,7 +41,7 @@ enabled globally — this means the docstring examples embedded in
 them accurate and runnable when editing docstrings.
 
 CI, defined in `.github/workflows/test.yml`, runs the full test matrix
-(Python 3.9–3.14 across Linux, macOS and Windows) via
+(Python 3.10–3.15 across Linux, macOS and Windows) via
 `uv run coverage run -m pytest`, then combines the per-OS coverage data in a
 follow-up job. The path mapping used to combine coverage collected on
 different OSes is configured in `[tool.coverage.paths]` in `pyproject.toml` —
@@ -57,17 +57,9 @@ you to.
 
 ## Type hints
 
-Ruff enforces the modern annotation style (`UP`, `FA`, and a `TID251` ban on
-`typing` names that have a `collections.abc` equivalent; see `ruff.toml`).
-Two rules it cannot check:
-
-- `X | Y` is only safe inside annotations, which
-  `from __future__ import annotations` turns into strings. Anywhere evaluated
-  at runtime (module-level type aliases, `isinstance` checks, `attrs`
-  converters/validators) it raises `TypeError` on Python 3.9; use
-  `typing.Union`/`typing.Optional` there, or keep the alias under
-  `TYPE_CHECKING`.
-- Test functions do not carry type annotations; helpers may.
+Ruff enforces the modern annotation style (`UP` and `FA`; see `ruff.toml`).
+One rule it cannot check: test functions do not carry type annotations;
+helpers may.
 
 ## Architecture
 
