@@ -3,6 +3,7 @@ import shutil
 import numpy as np
 import pandas as pd
 import pytest
+import xarray as xr
 
 import axsdb
 from axsdb import (
@@ -11,7 +12,7 @@ from axsdb import (
     MonoAbsorptionDatabase,
 )
 from axsdb.core import _bracket_indices, get_absdb_type
-from axsdb.error import ErrorHandlingAction, InterpolationError
+from axsdb.error import DataError, ErrorHandlingAction, InterpolationError
 from axsdb.interpolation import interp_dataarray
 from axsdb.testing.fixtures import *  # noqa: F403
 from axsdb.units import get_unit_registry
@@ -395,3 +396,43 @@ def test_rebuild_spectral_coverage(mode, shared_datadir, tmp_path):
     rebuilt = cls.from_directory(dst, fix=False).spectral_coverage
     expected = cls.from_directory(src, fix=False).spectral_coverage
     pd.testing.assert_frame_equal(rebuilt, expected, check_exact=False)
+
+
+@pytest.fixture
+def unsorted_mono_dir(shared_datadir, tmp_path):
+    # Copy of nanomono_v1 whose ``w`` coordinate is made of two sorted chunks
+    # joined end to end (as in the komodo database)
+    src = shared_datadir / "nanomono_v1"
+    dst = tmp_path / src.name
+    shutil.copytree(src, dst)
+
+    with xr.open_dataset(src / "nanomono_v1.nc") as ds:
+        n = ds.sizes["w"]
+        ds.isel(w=np.roll(np.arange(n), n // 2)).load().to_netcdf(
+            dst / "nanomono_v1.nc"
+        )
+
+    return dst
+
+
+def test_eval_mono_unsorted_spectral_grid(
+    unsorted_mono_dir, shared_datadir, thermoprops_us_standard
+):
+    # Eager mode sorts the dataset on load and evaluates like the sorted one
+    w = [350.0] * ureg.nm
+    expected = MonoAbsorptionDatabase.from_directory(
+        shared_datadir / "nanomono_v1"
+    ).eval_sigma_a_mono(w, thermoprops_us_standard)
+    with pytest.warns(UserWarning, match="not sorted"):
+        result = MonoAbsorptionDatabase.from_directory(
+            unsorted_mono_dir
+        ).eval_sigma_a_mono(w, thermoprops_us_standard)
+    np.testing.assert_allclose(result.values, expected.values)
+
+
+def test_eval_mono_unsorted_spectral_grid_lazy(
+    unsorted_mono_dir, thermoprops_us_standard
+):
+    absdb = MonoAbsorptionDatabase.from_directory(unsorted_mono_dir, lazy=True)
+    with pytest.raises(DataError, match="not sorted"):
+        absdb.eval_sigma_a_mono([350.0] * ureg.nm, thermoprops_us_standard)

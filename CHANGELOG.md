@@ -18,6 +18,10 @@
     interpolation between the two bracketing spectral slices.
 * Fixed the rebuild of a missing `spectral.csv` file, which always failed with
   a `TypeError` ({ghpr}`20`).
+* Fixed `MonoAbsorptionDatabase.eval_sigma_a_mono()` returning NaN when the
+  `w` coordinate of a data file is not monotonic (regression in 0.2.0rc1).
+  In eager mode, such files are now sorted on load, with a warning; in lazy
+  mode, loading them raises a `DataError` ({ghpr}`23`).
 
 ## AxsDB 0.1.2 (2026-02-18)
 
