@@ -2,6 +2,11 @@
 
 ---
 
+## AxsDB 0.2.1 (2026-11-22)
+
+* `AbsorptionDatabaseFactory.register()` accepts a callable for `kwargs`,
+  evaluated each time `create()` is called ({ghpr}`25`).
+
 ## AxsDB 0.2.0 (2026-11-04)
 
 * Exposed `units` module as public API ({ghpr}`17`).

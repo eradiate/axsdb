@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -17,10 +17,24 @@ class RegistryEntry:
     name: str = attrs.field()
     cls: AbsorptionDatabaseT = attrs.field(repr=False)
     _path: Path | Callable = attrs.field(repr=False)
-    kwargs: dict[str, Any] = attrs.field(repr=False, factory=dict)
+    _kwargs: dict[str, Any] | Callable[[], dict[str, Any]] = attrs.field(
+        repr=False, factory=dict
+    )
 
     def path(self):
         return self._path() if callable(self._path) else self._path
+
+    def kwargs(self) -> dict[str, Any]:
+        if not callable(self._kwargs):
+            return dict(self._kwargs)
+
+        result = self._kwargs()
+        if not isinstance(result, Mapping):
+            raise TypeError(
+                f"kwargs callable of database '{self.name}' must return a "
+                f"mapping, got {type(result).__name__}"
+            )
+        return dict(result)
 
 
 @attrs.define
@@ -54,7 +68,7 @@ class AbsorptionDatabaseFactory:
         name: str,
         cls: AbsorptionDatabaseT,
         path: Path | Callable,
-        kwargs: dict[str, Any] | None = None,
+        kwargs: dict[str, Any] | Callable[[], dict[str, Any]] | None = None,
     ) -> None:
         """
         Register a new database to the factory.
@@ -72,9 +86,12 @@ class AbsorptionDatabaseFactory:
             name is dynamic (*e.g.* resolved by Eradiate's file resolver), a
             callable with signature ``f() -> Path | str`` can be passed.
 
-        kwargs : dict, optional
+        kwargs : dict or callable, optional
             Default loading options passed to the constructor when instantiating
-            this database.
+            this database. If the options are dynamic (*e.g.* read from
+            Eradiate's configuration), a callable with signature
+            ``f() -> dict`` can be passed; it is called each time
+            :meth:`create` is called.
 
         Examples
         --------
@@ -104,6 +121,17 @@ class AbsorptionDatabaseFactory:
         ...     kwargs={"lazy": True},
         ... )
 
+        Get default keyword arguments dynamically from a callable:
+
+        >>> def kwargs():
+        ...     return {"lazy": True, "error_handling_config": get_my_config()}
+        >>> factory.register(
+        ...     name="nanomono",
+        ...     cls=MonoAbsorptionDatabase,
+        ...     path="~/Data/nanomono",
+        ...     kwargs=kwargs,
+        ... )
+
         """
         if kwargs is None:
             kwargs = {}
@@ -123,7 +151,8 @@ class AbsorptionDatabaseFactory:
 
         kwargs
             Optional keyword arguments passed to the database constructor. These
-            settings will override registered defaults.
+            settings will override registered defaults. If the registered
+            defaults are a callable, it is evaluated at each call.
 
         Returns
         -------
@@ -137,6 +166,6 @@ class AbsorptionDatabaseFactory:
 
         cls = entry.cls
         path = entry.path()
-        kwargs = {**entry.kwargs, **kwargs}
+        kwargs = {**entry.kwargs(), **kwargs}
 
         return cls.from_directory(path, **kwargs)
